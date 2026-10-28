@@ -1,0 +1,13 @@
+{
+  "at": "2026-10-28T13:02:39.665Z",
+  "tool": "Node HTTP",
+  "scenario": "10并发、100次同一报名重试；与1000虚拟用户查询负载同机运行",
+  "requests": 100,
+  "statuses": {
+    "200": 1,
+    "409": 99
+  },
+  "p95Milliseconds": 55.30060000000002,
+  "duplicateRecords": 1,
+  "passed": true
+}

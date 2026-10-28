@@ -1,0 +1,4 @@
+import assert from 'node:assert/strict'
+const base=process.env.BASE_URL||'http://127.0.0.1:8080/api/v1',jar=new Map()
+async function req(method,path,body){const headers={'Content-Type':'application/json',Cookie:[...jar].map(([k,v])=>k+'='+v).join('; ')};if(jar.has('XSRF-TOKEN'))headers['X-XSRF-TOKEN']=decodeURIComponent(jar.get('XSRF-TOKEN'));const r=await fetch(base+path,{method,headers,body:body?JSON.stringify(body):undefined});for(const value of r.headers.getSetCookie()){const first=value.split(';')[0],i=first.indexOf('=');jar.set(first.slice(0,i),first.slice(i+1))}const data=await r.json();assert.equal(r.status,200,JSON.stringify(data));return data}
+await req('GET','/csrf');await req('POST','/session',{studentNo:'admin',password:'Demo123!'});await req('POST','/demo/reset',{});const publicData=await req('GET','/snapshot');assert.equal(publicData.activities.length,4);assert.equal(publicData.applications.length,0);console.log('课程演示数据已恢复为4项活动；当前管理员会话已退出。')

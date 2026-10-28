@@ -1,0 +1,35 @@
+server:
+  address: 127.0.0.1
+  port: 8080
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        http-only: true
+        same-site: strict
+  tomcat:
+    max-swallow-size: 30MB
+spring:
+  datasource:
+    url: ${CAMPUS_DB_URL:jdbc:mysql://127.0.0.1:3307/campus?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai}
+    username: ${CAMPUS_DB_USER:campus}
+    password: ${CAMPUS_DB_PASSWORD:}
+    hikari:
+      maximum-pool-size: 20
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+campus:
+  files: ${CAMPUS_FILES:./data/files}
+  maintenance: ${CAMPUS_MAINTENANCE:false}
+  demo: ${CAMPUS_DEMO:false}
+logging:
+  level:
+    org.hibernate.SQL: WARN
+    org.springframework.security: WARN

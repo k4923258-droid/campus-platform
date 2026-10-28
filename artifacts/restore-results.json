@@ -1,0 +1,6 @@
+{
+  "at": "2026-10-28T13:10:01.932Z",
+  "passed": true,
+  "scenario": "从归档前备份恢复；保留最新清理记录，启动后个人报名、附件、通知未复活",
+  "backupDirectory": "C:/Users/lenovo/Desktop/software engineering experiment/campus-platform/backend/data/backups/20261028-210843-296/"
+}

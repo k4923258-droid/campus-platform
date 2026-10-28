@@ -1,0 +1,16 @@
+CREATE TABLE campus_users (id VARCHAR(64) NOT NULL PRIMARY KEY, body LONGTEXT NOT NULL);
+CREATE TABLE campus_organizations (id VARCHAR(64) NOT NULL PRIMARY KEY, body LONGTEXT NOT NULL);
+CREATE TABLE campus_activities (id VARCHAR(64) NOT NULL PRIMARY KEY, body LONGTEXT NOT NULL);
+CREATE TABLE campus_applications (id VARCHAR(64) NOT NULL PRIMARY KEY, body LONGTEXT NOT NULL);
+CREATE TABLE campus_slots (id VARCHAR(64) NOT NULL PRIMARY KEY, body LONGTEXT NOT NULL);
+CREATE TABLE campus_notices (id VARCHAR(64) NOT NULL PRIMARY KEY, body LONGTEXT NOT NULL);
+CREATE TABLE campus_grants (id VARCHAR(64) NOT NULL PRIMARY KEY, body LONGTEXT NOT NULL);
+CREATE TABLE campus_audits (id VARCHAR(64) NOT NULL PRIMARY KEY, body LONGTEXT NOT NULL);
+CREATE TABLE campus_attachments (id VARCHAR(64) NOT NULL PRIMARY KEY, body LONGTEXT NOT NULL);
+CREATE TABLE campus_semesters (id VARCHAR(64) NOT NULL PRIMARY KEY, body LONGTEXT NOT NULL);
+CREATE TABLE mutation_lock (id BIGINT NOT NULL PRIMARY KEY);
+INSERT INTO mutation_lock(id) VALUES (1);
+CREATE TABLE registration_member (activity_id VARCHAR(64) NOT NULL, student_no VARCHAR(20) NOT NULL, application_id VARCHAR(64) NOT NULL, PRIMARY KEY(activity_id,student_no));
+CREATE INDEX idx_member_application ON registration_member(application_id);
+CREATE TABLE slot_reservation (application_id VARCHAR(64) NOT NULL PRIMARY KEY, slot_id VARCHAR(64) NOT NULL);
+CREATE INDEX idx_reservation_slot ON slot_reservation(slot_id);

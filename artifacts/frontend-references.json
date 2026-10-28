@@ -1,0 +1,20 @@
+[
+  {
+    "name": "osu",
+    "url": "https://activities.osu.edu/involvement/student-organizations/find-a-student-org/",
+    "title": "Find a Student Organization : Student Activities",
+    "screenshot": "artifacts/reference-osu.png"
+  },
+  {
+    "name": "cornell",
+    "url": "https://cornell.campusgroups.com/events",
+    "title": "Events List",
+    "screenshot": "artifacts/reference-cornell.png"
+  },
+  {
+    "name": "usu",
+    "url": "https://clubs.usu.edu.au/club_signup?category_tags=&group_type=86667",
+    "title": "List Of Groups",
+    "screenshot": "artifacts/reference-usu.png"
+  }
+]

@@ -1,0 +1,337 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "C:\\Users\\lenovo\\Desktop\\software engineering experiment\\campus-platform\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--config",
+      "playwright.server.config.ts"
+    ],
+    "configFile": "C:\\Users\\lenovo\\Desktop\\software engineering experiment\\campus-platform\\playwright.server.config.ts",
+    "rootDir": "C:/Users/lenovo/Desktop/software engineering experiment/campus-platform/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/lenovo/Desktop/software engineering experiment/campus-platform/test-results/server",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "server-chrome",
+        "name": "server-chrome",
+        "testDir": "C:/Users/lenovo/Desktop/software engineering experiment/campus-platform/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "server-ui.spec.ts"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "C:/Users/lenovo/Desktop/software engineering experiment/campus-platform/test-results/server",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "server-edge",
+        "name": "server-edge",
+        "testDir": "C:/Users/lenovo/Desktop/software engineering experiment/campus-platform/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "server-ui.spec.ts"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "C:/Users/lenovo/Desktop/software engineering experiment/campus-platform/test-results/server",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "server-mobile375",
+        "name": "server-mobile375",
+        "testDir": "C:/Users/lenovo/Desktop/software engineering experiment/campus-platform/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "server-ui.spec.ts"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "C:\\Users\\lenovo\\Desktop\\software engineering experiment\\campus-platform\\test-results\\server",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "server-chrome",
+        "testDir": "C:\\Users\\lenovo\\Desktop\\software engineering experiment\\campus-platform\\tests",
+        "snapshotDir": "C:\\Users\\lenovo\\Desktop\\software engineering experiment\\campus-platform\\tests",
+        "testIgnore": [],
+        "testMatch": "server-ui.spec.ts",
+        "timeout": 60000,
+        "use": {
+          "baseURL": "http://127.0.0.1:8080",
+          "headless": true,
+          "trace": "retain-on-failure",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Safari/537.36",
+          "viewport": {
+            "width": 1280,
+            "height": 720
+          },
+          "screen": {
+            "width": 1920,
+            "height": 1080
+          },
+          "deviceScaleFactor": 1,
+          "isMobile": false,
+          "hasTouch": false,
+          "defaultBrowserType": "chromium",
+          "channel": "chrome"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "server-chrome"
+      },
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "C:\\Users\\lenovo\\Desktop\\software engineering experiment\\campus-platform\\test-results\\server",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "server-edge",
+        "testDir": "C:\\Users\\lenovo\\Desktop\\software engineering experiment\\campus-platform\\tests",
+        "snapshotDir": "C:\\Users\\lenovo\\Desktop\\software engineering experiment\\campus-platform\\tests",
+        "testIgnore": [],
+        "testMatch": "server-ui.spec.ts",
+        "timeout": 60000,
+        "use": {
+          "baseURL": "http://127.0.0.1:8080",
+          "headless": true,
+          "trace": "retain-on-failure",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Safari/537.36 Edg/156.0.8078.4",
+          "viewport": {
+            "width": 1280,
+            "height": 720
+          },
+          "screen": {
+            "width": 1920,
+            "height": 1080
+          },
+          "deviceScaleFactor": 1,
+          "isMobile": false,
+          "hasTouch": false,
+          "defaultBrowserType": "chromium",
+          "channel": "msedge"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "server-edge"
+      },
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "C:\\Users\\lenovo\\Desktop\\software engineering experiment\\campus-platform\\test-results\\server",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "server-mobile375",
+        "testDir": "C:\\Users\\lenovo\\Desktop\\software engineering experiment\\campus-platform\\tests",
+        "snapshotDir": "C:\\Users\\lenovo\\Desktop\\software engineering experiment\\campus-platform\\tests",
+        "testIgnore": [],
+        "testMatch": "server-ui.spec.ts",
+        "timeout": 60000,
+        "use": {
+          "baseURL": "http://127.0.0.1:8080",
+          "headless": true,
+          "trace": "retain-on-failure",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Safari/537.36",
+          "viewport": {
+            "width": 375,
+            "height": 812
+          },
+          "screen": {
+            "width": 1920,
+            "height": 1080
+          },
+          "deviceScaleFactor": 1,
+          "isMobile": false,
+          "hasTouch": false,
+          "defaultBrowserType": "chromium",
+          "channel": "chrome"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "server-mobile375"
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "artifacts/server-browser-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "server-ui.spec.ts",
+      "file": "server-ui.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "同源打包版 / 登录、负责人发布、学生报名与数据库持久化",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "server-chrome",
+              "projectName": "server-chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7130,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-28T14:30:01.898Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "6633661ddde1d042184c-b67f8f1f19a30a651f2f",
+          "file": "server-ui.spec.ts",
+          "line": 9,
+          "column": 1
+        },
+        {
+          "title": "同源打包版 / 登录、负责人发布、学生报名与数据库持久化",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "server-edge",
+              "projectName": "server-edge",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7513,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-28T14:30:09.994Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "6633661ddde1d042184c-de8755df58f1ccdf40e8",
+          "file": "server-ui.spec.ts",
+          "line": 9,
+          "column": 1
+        },
+        {
+          "title": "同源打包版 / 登录、负责人发布、学生报名与数据库持久化",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "server-mobile375",
+              "projectName": "server-mobile375",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6639,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-28T14:30:18.644Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "6633661ddde1d042184c-92aecc06ca27b6a3f42c",
+          "file": "server-ui.spec.ts",
+          "line": 9,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-28T14:30:01.516Z",
+    "duration": 24310.062,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

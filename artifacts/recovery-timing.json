@@ -1,0 +1,8 @@
+{
+  "outageStart": "2026-10-28T13:09:28.436Z",
+  "backupAt": "2026-10-28T21:08:43.4780150+08:00",
+  "restoredAt": "2026-10-28T13:10:02.026Z",
+  "rtoSeconds": 33.59,
+  "rpoSeconds": 44.958,
+  "passed": true
+}

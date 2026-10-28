@@ -1,0 +1,375 @@
+{
+  "schema": 1,
+  "users": [
+    {
+      "id": "student",
+      "name": "林知夏",
+      "studentNo": "20260001",
+      "passwordHash": "588c55f3ce2b8569b153c5abbf13f9f74308b88a20017cc699b835cc93195d16",
+      "roles": [
+        "student"
+      ],
+      "orgIds": []
+    },
+    {
+      "id": "member",
+      "name": "陈一舟",
+      "studentNo": "20260002",
+      "passwordHash": "588c55f3ce2b8569b153c5abbf13f9f74308b88a20017cc699b835cc93195d16",
+      "roles": [
+        "student"
+      ],
+      "orgIds": []
+    },
+    {
+      "id": "member2",
+      "name": "许宁",
+      "studentNo": "20260003",
+      "passwordHash": "588c55f3ce2b8569b153c5abbf13f9f74308b88a20017cc699b835cc93195d16",
+      "roles": [
+        "student"
+      ],
+      "orgIds": []
+    },
+    {
+      "id": "manager",
+      "name": "周同学",
+      "studentNo": "20240001",
+      "passwordHash": "588c55f3ce2b8569b153c5abbf13f9f74308b88a20017cc699b835cc93195d16",
+      "roles": [
+        "student",
+        "manager"
+      ],
+      "orgIds": [
+        "photo",
+        "innovation"
+      ]
+    },
+    {
+      "id": "other-manager",
+      "name": "赵同学",
+      "studentNo": "20240002",
+      "passwordHash": "588c55f3ce2b8569b153c5abbf13f9f74308b88a20017cc699b835cc93195d16",
+      "roles": [
+        "student",
+        "manager"
+      ],
+      "orgIds": [
+        "choir"
+      ]
+    },
+    {
+      "id": "admin",
+      "name": "平台管理员",
+      "studentNo": "admin",
+      "passwordHash": "588c55f3ce2b8569b153c5abbf13f9f74308b88a20017cc699b835cc93195d16",
+      "roles": [
+        "admin"
+      ],
+      "orgIds": []
+    }
+  ],
+  "organizations": [
+    {
+      "id": "photo",
+      "name": "光影摄影协会",
+      "kind": "club",
+      "campus": "南湖",
+      "stars": 4,
+      "enabled": true
+    },
+    {
+      "id": "choir",
+      "name": "校园合唱团",
+      "kind": "club",
+      "campus": "浑南",
+      "stars": 5,
+      "enabled": true
+    },
+    {
+      "id": "innovation",
+      "name": "大学生创新实践竞赛",
+      "kind": "contest",
+      "campus": "两校区",
+      "stars": 5,
+      "enabled": true
+    },
+    {
+      "id": "math",
+      "name": "全国大学生数学建模竞赛",
+      "kind": "contest",
+      "campus": "两校区",
+      "stars": 6,
+      "enabled": true
+    }
+  ],
+  "activities": [
+    {
+      "id": "photo-fall",
+      "orgId": "photo",
+      "title": "摄影协会 2026 年秋季招新",
+      "body": "## 招新说明\n\n面向本校学生招收新成员，可使用手机或相机参加社团活动。\n\n### 活动内容\n- 校园摄影与作品交流\n- 摄影基础培训\n- 线下采风\n\n### 报名与审核\n填写自我介绍和年级后提交报名。活动采用滚动审核，初审通过后选择面试时段。具体安排通过站内信通知。",
+      "poster": "",
+      "start": "2026-10-20T00:00:00+08:00",
+      "end": "2026-11-10T18:00:00+08:00",
+      "published": true,
+      "removed": false,
+      "external": false,
+      "externalGuide": "",
+      "team": false,
+      "minTeam": 1,
+      "maxTeam": 1,
+      "rolling": true,
+      "fields": [
+        {
+          "id": "intro",
+          "label": "自我介绍",
+          "type": "textarea",
+          "required": true,
+          "options": []
+        },
+        {
+          "id": "grade",
+          "label": "年级",
+          "type": "radio",
+          "required": true,
+          "options": [
+            "大一",
+            "大二",
+            "大三",
+            "大四"
+          ]
+        }
+      ],
+      "stages": [
+        {
+          "key": "initial",
+          "enabled": true,
+          "automatic": false,
+          "mode": "pass",
+          "threshold": 60
+        },
+        {
+          "key": "written",
+          "enabled": false,
+          "automatic": false,
+          "mode": "pass",
+          "threshold": 60
+        },
+        {
+          "key": "interview",
+          "enabled": true,
+          "automatic": false,
+          "mode": "pass",
+          "threshold": 60
+        }
+      ],
+      "softGrade": "大一,大二",
+      "softMaterial": "",
+      "resultPublished": false,
+      "resultVersion": 0
+    },
+    {
+      "id": "choir-fall",
+      "orgId": "choir",
+      "title": "校园合唱团 2026 年秋季招新",
+      "body": "## 招新说明\n\n面向本校学生招收合唱团新成员，无专业基础要求。\n\n### 审核安排\n报名截止后统一审核，依次进行初审、笔试和面试。请在“我的报名”查看当前环节，并留意站内信。",
+      "poster": "",
+      "start": "2026-10-20T00:00:00+08:00",
+      "end": "2026-11-05T18:00:00+08:00",
+      "published": true,
+      "removed": false,
+      "external": false,
+      "externalGuide": "",
+      "team": false,
+      "minTeam": 1,
+      "maxTeam": 1,
+      "rolling": false,
+      "fields": [
+        {
+          "id": "intro",
+          "label": "自我介绍",
+          "type": "textarea",
+          "required": true,
+          "options": []
+        },
+        {
+          "id": "grade",
+          "label": "年级",
+          "type": "radio",
+          "required": true,
+          "options": [
+            "大一",
+            "大二",
+            "大三",
+            "大四"
+          ]
+        }
+      ],
+      "stages": [
+        {
+          "key": "initial",
+          "enabled": true,
+          "automatic": false,
+          "mode": "pass",
+          "threshold": 60
+        },
+        {
+          "key": "written",
+          "enabled": true,
+          "automatic": false,
+          "mode": "pass",
+          "threshold": 60
+        },
+        {
+          "key": "interview",
+          "enabled": true,
+          "automatic": false,
+          "mode": "pass",
+          "threshold": 60
+        }
+      ],
+      "softGrade": "",
+      "softMaterial": "",
+      "resultPublished": false,
+      "resultVersion": 0
+    },
+    {
+      "id": "innovation-team",
+      "orgId": "innovation",
+      "title": "大学生创新实践竞赛（校内选拔）",
+      "body": "## 参赛要求\n\n以2—4人团队参加校内选拔。队长录入队员学号并统一提交项目构想，队员无需逐一确认。\n\n### 审核与面试\n采用滚动审核，按初审、笔试、面试顺序进行。进入面试后由队长为全队选择一个时段，每队占用一个名额。",
+      "poster": "",
+      "start": "2026-10-20T00:00:00+08:00",
+      "end": "2026-11-12T18:00:00+08:00",
+      "published": true,
+      "removed": false,
+      "external": false,
+      "externalGuide": "",
+      "team": true,
+      "minTeam": 2,
+      "maxTeam": 4,
+      "rolling": true,
+      "fields": [
+        {
+          "id": "proposal",
+          "label": "项目构想",
+          "type": "textarea",
+          "required": true,
+          "options": []
+        }
+      ],
+      "stages": [
+        {
+          "key": "initial",
+          "enabled": true,
+          "automatic": false,
+          "mode": "pass",
+          "threshold": 60
+        },
+        {
+          "key": "written",
+          "enabled": true,
+          "automatic": false,
+          "mode": "pass",
+          "threshold": 60
+        },
+        {
+          "key": "interview",
+          "enabled": true,
+          "automatic": false,
+          "mode": "pass",
+          "threshold": 60
+        }
+      ],
+      "softGrade": "",
+      "softMaterial": "",
+      "resultPublished": false,
+      "resultVersion": 0
+    },
+    {
+      "id": "math-external",
+      "orgId": "math",
+      "title": "数学建模竞赛报名信息",
+      "body": "## 报名指引\n\n本活动通过外部官方渠道报名，平台不接收报名材料。报名时间、参赛资格和费用请以当届官方通知为准。",
+      "poster": "",
+      "start": "2026-10-20T00:00:00+08:00",
+      "end": "2026-11-30T18:00:00+08:00",
+      "published": true,
+      "removed": false,
+      "external": true,
+      "externalGuide": "请访问官方网站核对当届通知：https://www.mcm.edu.cn/",
+      "team": false,
+      "minTeam": 1,
+      "maxTeam": 1,
+      "rolling": false,
+      "fields": [],
+      "stages": [
+        {
+          "key": "initial",
+          "enabled": true,
+          "automatic": false,
+          "mode": "pass",
+          "threshold": 60
+        },
+        {
+          "key": "written",
+          "enabled": true,
+          "automatic": false,
+          "mode": "pass",
+          "threshold": 60
+        },
+        {
+          "key": "interview",
+          "enabled": true,
+          "automatic": false,
+          "mode": "pass",
+          "threshold": 60
+        }
+      ],
+      "softGrade": "",
+      "softMaterial": "",
+      "resultPublished": false,
+      "resultVersion": 0
+    }
+  ],
+  "applications": [],
+  "slots": [
+    {
+      "id": "photo-slot-1",
+      "activityId": "photo-fall",
+      "start": "2026-11-01T14:00:00+08:00",
+      "end": "2026-11-01T14:30:00+08:00",
+      "place": "大学生活动中心 201",
+      "capacity": 2,
+      "cancelled": false
+    },
+    {
+      "id": "photo-slot-2",
+      "activityId": "photo-fall",
+      "start": "2026-11-01T14:30:00+08:00",
+      "end": "2026-11-01T15:00:00+08:00",
+      "place": "大学生活动中心 201",
+      "capacity": 1,
+      "cancelled": false
+    }
+  ],
+  "notices": [],
+  "grants": [],
+  "audits": [],
+  "attachments": [],
+  "semesters": [
+    {
+      "id": "2026-fall",
+      "name": "2026—2027 秋季学期",
+      "start": "2026-09-01",
+      "end": "2027-01-17"
+    },
+    {
+      "id": "2027-spring",
+      "name": "2026—2027 春季学期",
+      "start": "2027-02-22",
+      "end": "2027-07-18"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "tool": "Node.js HTTP fallback; k6 official distribution unavailable due TLS EOF",
+  "at": "2026-10-28T13:06:15.214Z",
+  "node": "v26.5.1",
+  "cpu": "Intel(R) Core(TM) Ultra 7 255H",
+  "memoryBytes": 33752997888,
+  "vus": 1000,
+  "durationSeconds": 600,
+  "actualSeconds": 600.951,
+  "requests": 591269,
+  "errors": 0,
+  "errorRate": 0,
+  "peakInflight": 1000,
+  "bytes": 3049146618,
+  "p95Milliseconds": 11.908099999993283,
+  "maxMilliseconds": 497.09440000000006,
+  "passed": true
+}

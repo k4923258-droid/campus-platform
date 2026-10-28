@@ -1,0 +1,1537 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "校园社团与竞赛平台接口",
+    "version": "0.4.0",
+    "description": "命令接口按业务操作命名；模拟版与Java版共用相同路径。服务端权限由业务层校验，前端按钮隐藏不构成授权。"
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "paths": {
+    "/snapshot": {
+      "get": {
+        "summary": "按角色与所属组织返回业务投影；不返回密码或附件二进制",
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "503": {
+            "description": "初始化或维护中"
+          }
+        }
+      }
+    },
+    "/csrf": {
+      "get": {
+        "summary": "领取CSRF Cookie和令牌，写操作携带X-XSRF-TOKEN",
+        "responses": {
+          "200": {
+            "description": "CSRF token"
+          }
+        }
+      }
+    },
+    "/session": {
+      "post": {
+        "summary": "登录；服务器使用HttpOnly JSESSIONID，模拟模式返回30分钟token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "studentNo": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "studentNo",
+                  "password"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "503": {
+            "description": "初始化或维护中"
+          }
+        }
+      },
+      "delete": {
+        "summary": "退出并使当前会话失效",
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "503": {
+            "description": "初始化或维护中"
+          }
+        }
+      }
+    },
+    "/files": {
+      "post": {
+        "summary": "上传20MB以内图片/PDF/ZIP；服务端校验扩展名、声明MIME、实际内容与字节数",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "mime": {
+                    "type": "string"
+                  },
+                  "size": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 20971520
+                  },
+                  "data": {
+                    "type": "string",
+                    "description": "base64 data URL"
+                  }
+                },
+                "required": [
+                  "name",
+                  "mime",
+                  "size",
+                  "data"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "503": {
+            "description": "初始化或维护中"
+          }
+        }
+      }
+    },
+    "/files/{id}": {
+      "get": {
+        "summary": "受权限保护的文件下载",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "503": {
+            "description": "初始化或维护中"
+          }
+        }
+      }
+    },
+    "/demo/reset": {
+      "post": {
+        "summary": "仅管理员且服务器显式启用课程演示时可恢复种子数据；归档清理记录不撤销",
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "503": {
+            "description": "初始化或维护中"
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "服务状态",
+        "responses": {
+          "200": {
+            "description": "up或maintenance"
+          }
+        }
+      }
+    },
+    "/commands/register": {
+      "post": {
+        "summary": "register",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "studentNo": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 128
+                  }
+                },
+                "required": [
+                  "studentNo",
+                  "name",
+                  "password"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "503": {
+            "description": "初始化或维护中"
+          }
+        }
+      }
+    },
+    "/commands/activity.save": {
+      "post": {
+        "summary": "activity.save",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "orgId": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "body": {
+                    "type": "string"
+                  },
+                  "poster": {
+                    "type": "string"
+                  },
+                  "start": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "end": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "published": {
+                    "type": "boolean"
+                  },
+                  "external": {
+                    "type": "boolean"
+                  },
+                  "externalGuide": {
+                    "type": "string"
+                  },
+                  "team": {
+                    "type": "boolean"
+                  },
+                  "minTeam": {
+                    "type": "integer"
+                  },
+                  "maxTeam": {
+                    "type": "integer"
+                  },
+                  "rolling": {
+                    "type": "boolean"
+                  },
+                  "fields": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "label": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "enum": [
+                            "text",
+                            "textarea",
+                            "number",
+                            "radio",
+                            "checkbox",
+                            "date",
+                            "file"
+                          ]
+                        },
+                        "required": {
+                          "type": "boolean"
+                        },
+                        "options": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "label",
+                        "type",
+                        "required",
+                        "options"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "stages": {
+                    "type": "array",
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "enum": [
+                            "initial",
+                            "written",
+                            "interview"
+                          ]
+                        },
+                        "enabled": {
+                          "type": "boolean"
+                        },
+                        "automatic": {
+                          "type": "boolean"
+                        },
+                        "mode": {
+                          "enum": [
+                            "pass",
+                            "score"
+                          ]
+                        },
+                        "threshold": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 100
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "enabled",
+                        "automatic",
+                        "mode",
+                        "threshold"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "softGrade": {
+                    "type": "string"
+                  },
+                  "softMaterial": {
+                    "type": "string"
+                  },
+                  "publishedAt": {
+                    "type": "string"
+                  },
+                  "removed": {
+                    "type": "boolean"
+                  },
+                  "resultPublished": {
+                    "type": "boolean"
+                  },
+                  "resultVersion": {
+                    "type": "integer"
+                  },
+                  "closedAt": {
+                    "type": "string"
+                  },
+                  "archived": {
+                    "type": "boolean"
+                  },
+                  "summary": {
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "orgId",
+                  "title",
+                  "body",
+                  "start",
+                  "end",
+                  "published",
+                  "external",
+                  "team",
+                  "minTeam",
+                  "maxTeam",
+                  "rolling",
+                  "fields",
+                  "stages"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "503": {
+            "description": "初始化或维护中"
+          }
+        }
+      }
+    },
+    "/commands/application.save": {
+      "post": {
+        "summary": "application.save",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "activityId": {
+                    "type": "string"
+                  },
+                  "version": {
+                    "type": "integer"
+                  },
+                  "answers": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "memberNos": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "confirmSoft": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "activityId",
+                  "answers"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "503": {
+            "description": "初始化或维护中"
+          }
+        }
+      }
+    },
+    "/commands/application.withdraw": {
+      "post": {
+        "summary": "application.withdraw",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "503": {
+            "description": "初始化或维护中"
+          }
+        }
+      }
+    },
+    "/commands/application.exit": {
+      "post": {
+        "summary": "application.exit",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "503": {
+            "description": "初始化或维护中"
+          }
+        }
+      }
+    },
+    "/commands/review.save": {
+      "post": {
+        "summary": "review.save",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "version": {
+                    "type": "integer"
+                  },
+                  "stage": {
+                    "type": "string"
+                  },
+                  "score": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100
+                  },
+                  "passed": {
+                    "type": "boolean"
+                  },
+                  "note": {
+                    "type": "string"
+                  },
+                  "commit": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "id",
+                  "version",
+                  "commit"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "503": {
+            "description": "初始化或维护中"
+          }
+        }
+      }
+    },
+    "/commands/slot.save": {
+      "post": {
+        "summary": "slot.save",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "activityId": {
+                    "type": "string"
+                  },
+                  "start": {
+                    "type": "string"
+                  },
+                  "end": {
+                    "type": "string"
+                  },
+                  "place": {
+                    "type": "string"
+                  },
+                  "capacity": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "cancelled": {
+                    "type": "boolean"
+                  },
+                  "reason": {
+                    "type": "string"
+                  },
+                  "booked": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "activityId",
+                  "start",
+                  "end",
+                  "place",
+                  "capacity"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "503": {
+            "description": "初始化或维护中"
+          }
+        }
+      }
+    },
+    "/commands/slot.book": {
+      "post": {
+        "summary": "slot.book",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "slotId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "slotId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "503": {
+            "description": "初始化或维护中"
+          }
+        }
+      }
+    },
+    "/commands/result.publish": {
+      "post": {
+        "summary": "result.publish",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "activityId": {
+                    "type": "string"
+                  },
+                  "admittedIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "activityId",
+                  "admittedIds"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "503": {
+            "description": "初始化或维护中"
+          }
+        }
+      }
+    },
+    "/commands/result.withdraw": {
+      "post": {
+        "summary": "result.withdraw",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "activityId": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "activityId",
+                  "reason"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "503": {
+            "description": "初始化或维护中"
+          }
+        }
+      }
+    },
+    "/commands/notice.send": {
+      "post": {
+        "summary": "notice.send",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "activityId": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string"
+                  },
+                  "text": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "activityId",
+                  "text"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "503": {
+            "description": "初始化或维护中"
+          }
+        }
+      }
+    },
+    "/commands/notice.read": {
+      "post": {
+        "summary": "notice.read",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "503": {
+            "description": "初始化或维护中"
+          }
+        }
+      }
+    },
+    "/commands/grant.apply": {
+      "post": {
+        "summary": "grant.apply",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "orgId": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "orgId",
+                  "reason"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "503": {
+            "description": "初始化或维护中"
+          }
+        }
+      }
+    },
+    "/commands/grant.decide": {
+      "post": {
+        "summary": "grant.decide",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "approved": {
+                    "type": "boolean"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "approved"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "503": {
+            "description": "初始化或维护中"
+          }
+        }
+      }
+    },
+    "/commands/organization.save": {
+      "post": {
+        "summary": "organization.save",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "enum": [
+                      "club",
+                      "contest"
+                    ]
+                  },
+                  "campus": {
+                    "type": "string"
+                  },
+                  "stars": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 7
+                  },
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "name",
+                  "kind",
+                  "campus",
+                  "stars"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "503": {
+            "description": "初始化或维护中"
+          }
+        }
+      }
+    },
+    "/commands/activity.remove": {
+      "post": {
+        "summary": "activity.remove",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "activityId": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "activityId",
+                  "reason"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "503": {
+            "description": "初始化或维护中"
+          }
+        }
+      }
+    },
+    "/commands/activity.close": {
+      "post": {
+        "summary": "activity.close",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "activityId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "activityId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "503": {
+            "description": "初始化或维护中"
+          }
+        }
+      }
+    },
+    "/commands/activity.archive": {
+      "post": {
+        "summary": "activity.archive",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "activityId": {
+                    "type": "string"
+                  },
+                  "confirm": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "activityId",
+                  "confirm"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "503": {
+            "description": "初始化或维护中"
+          }
+        }
+      }
+    },
+    "/commands/semester.save": {
+      "post": {
+        "summary": "semester.save",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "start": {
+                    "type": "string"
+                  },
+                  "end": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name",
+                  "start",
+                  "end"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "503": {
+            "description": "初始化或维护中"
+          }
+        }
+      }
+    },
+    "/commands/demo.time": {
+      "post": {
+        "summary": "仅浏览器模拟模式的时间推进",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "now": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "now"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "503": {
+            "description": "初始化或维护中"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "session": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "JSESSIONID"
+      }
+    }
+  }
+}

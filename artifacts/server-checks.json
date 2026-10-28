@@ -1,0 +1,45 @@
+{
+  "at": "2026-10-28T13:39:11.564Z",
+  "checks": [
+    {
+      "name": "登录与密码脱敏投影",
+      "passed": true
+    },
+    {
+      "name": "负责人发布活动",
+      "passed": true
+    },
+    {
+      "name": "真实MySQL并发重复报名只保留一条",
+      "passed": true
+    },
+    {
+      "name": "游客数据隔离与跨组织审核拒绝",
+      "passed": true
+    },
+    {
+      "name": "评分草稿不流转，旧版本拒绝，正式确认推进",
+      "passed": true
+    },
+    {
+      "name": "真实MySQL并发争抢最后一个面试名额不超额",
+      "passed": true
+    },
+    {
+      "name": "录取发布、通知及撤回更正",
+      "passed": true
+    },
+    {
+      "name": "归档删除个人报名与通知并保留汇总",
+      "passed": true
+    },
+    {
+      "name": "伪造文件实际类型校验拒绝",
+      "passed": true
+    },
+    {
+      "name": "真实文件保存、本人下载与未授权下载拒绝",
+      "passed": true
+    }
+  ]
+}
