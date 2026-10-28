@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily campus backup
+
+[Timer]
+OnCalendar=*-*-* 03:20:00 Asia/Shanghai
+Persistent=true
+RandomizedDelaySec=60
+Unit=campus-backup.service
+
+[Install]
+WantedBy=timers.target

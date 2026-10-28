@@ -1,0 +1,31 @@
+[Unit]
+Description=Campus platform course demo
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=campus-platform
+Group=campus-platform
+WorkingDirectory=/opt/campus-platform
+EnvironmentFile=/etc/campus-platform/app.env
+ExecStart=/usr/bin/java -Xms64m -Xmx256m -XX:MaxMetaspaceSize=160m -XX:ReservedCodeCacheSize=64m -XX:ActiveProcessorCount=2 -jar /opt/campus-platform/current/app.jar
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=40
+SuccessExitStatus=143
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/campus-platform/data/files
+MemoryHigh=448M
+MemoryMax=576M
+TasksMax=128
+
+[Install]
+WantedBy=multi-user.target

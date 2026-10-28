@@ -1,0 +1,8 @@
+[Unit]
+Description=Campus database and attachments backup
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/campus-platform/backup.sh
+TimeoutStartSec=300

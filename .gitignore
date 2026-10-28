@@ -54,3 +54,7 @@ backend/src/main/resources/static/
 
 # Generated recovery fixture contains a machine-specific backup path
 artifacts/restore-fixture.json
+
+# Local browser inspection sessions
+.playwright-cli/
+output/playwright/
