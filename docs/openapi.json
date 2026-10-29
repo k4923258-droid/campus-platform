@@ -466,25 +466,50 @@
                     "type": "string"
                   },
                   "publishedAt": {
-                    "type": "string"
+                    "type": "string",
+                    "readOnly": true
                   },
                   "removed": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "readOnly": true
                   },
                   "resultPublished": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "readOnly": true
                   },
                   "resultVersion": {
-                    "type": "integer"
+                    "type": "integer",
+                    "readOnly": true
                   },
                   "closedAt": {
-                    "type": "string"
+                    "type": "string",
+                    "readOnly": true
                   },
                   "archived": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "readOnly": true
                   },
                   "summary": {
-                    "type": "object"
+                    "type": "object",
+                    "readOnly": true
+                  },
+                  "lifecycleStatus": {
+                    "type": "string",
+                    "readOnly": true
+                  },
+                  "changeHistory": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    },
+                    "readOnly": true
+                  },
+                  "resultHistory": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    },
+                    "readOnly": true
                   }
                 },
                 "required": [

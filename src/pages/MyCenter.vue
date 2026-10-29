@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { slotFull } from '@/domain/history'
+
 import { computed, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowUpRight, ClipboardList, CheckCircle2, Clock3 } from 'lucide-vue-next'
@@ -154,6 +156,10 @@ async function attachment(value: unknown) {
               </p>
               <p v-for="(h, i) in r.history" :key="i" class="small muted">
                 {{ h }}
+              </p>
+              <p v-for="(event, i) in r.statusEvents || []" :key="'event-' + i" class="small muted">
+                {{ event.at }} · {{ statusLabels[event.from] || '未提交' }} →
+                {{ statusLabels[event.to] }} · v{{ event.version }}
               </p></el-collapse-item
             ></el-collapse
           >
@@ -226,9 +232,11 @@ async function attachment(value: unknown) {
           <p>{{ slot.place }} · 已约 {{ (slot as any).booked || 0 }} / {{ slot.capacity }}</p>
         </div>
         <el-button
-          :disabled="s.now >= new Date(slot.start)"
+          :disabled="s.now >= new Date(slot.start) || slotFull(slot, selected?.slotId)"
           @click="act('slot.book', { id: selected?.id, slotId: slot.id })"
-          >{{ selected?.slotId === slot.id ? '已选择' : '选择' }}</el-button
+          >{{
+            selected?.slotId === slot.id ? '已选择' : slotFull(slot) ? '已满' : '选择'
+          }}</el-button
         >
       </div></el-dialog
     ><el-dialog v-model="grantOpen" title="申请负责人资格" width="480px" class="responsive-dialog"

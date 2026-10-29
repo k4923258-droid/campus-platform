@@ -16,6 +16,7 @@ const who = (request: Request) => {
   const session = sessions.get(token)
   if (!session || session.expires < Date.now()) {
     sessions.delete(token)
+    sessionStorage.setItem('demo-sessions', JSON.stringify([...sessions]))
     return undefined
   }
   return session.id
@@ -69,6 +70,15 @@ export async function startMocks() {
         const u = state.users.find((v) => v.studentNo === p.studentNo && v.passwordHash)
         if (!u || u.passwordHash !== (await hashPassword(p.password)))
           throw new DomainError('学号或密码错误', 401)
+        await atomic((s) => {
+          s.audits.unshift({
+            id: crypto.randomUUID(),
+            actorId: u.id,
+            action: '登录',
+            detail: '',
+            at: new Date(s.now || Date.now()).toISOString(),
+          })
+        })
         const token = crypto.randomUUID()
         sessions.set(token, { id: u.id, expires: Date.now() + 30 * 60 * 1000 })
         sessionStorage.setItem('demo-sessions', JSON.stringify([...sessions]))
@@ -77,8 +87,20 @@ export async function startMocks() {
     ),
     http.delete(
       '/api/v1/session',
-      safe((request) => {
+      safe(async (request) => {
+        const userId = who(request)
+        if (userId)
+          await atomic((s) => {
+            s.audits.unshift({
+              id: crypto.randomUUID(),
+              actorId: userId,
+              action: '退出登录',
+              detail: '',
+              at: new Date(s.now || Date.now()).toISOString(),
+            })
+          })
         sessions.delete(request.headers.get('X-Demo-Session') || '')
+        sessionStorage.setItem('demo-sessions', JSON.stringify([...sessions]))
         return HttpResponse.json({ ok: true })
       }),
     ),

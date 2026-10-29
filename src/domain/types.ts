@@ -32,6 +32,22 @@ export interface Stage {
   threshold: number
 }
 export interface Activity {
+  lifecycleStatus?: string
+  changeHistory?: {
+    at: string
+    actorId: string
+    changes: Record<string, { before: unknown; after: unknown }>
+  }[]
+  resultHistory?: {
+    version: number
+    at: string
+    actorId: string
+    admittedIds: string[]
+    unselectedIds: string[]
+    withdrawnAt?: string
+    withdrawnBy?: string
+    reason?: string
+  }[]
   publishedAt?: string
   id: string
   orgId: string
@@ -59,6 +75,8 @@ export interface Activity {
   summary?: { total: number; admitted: number; failed: number }
 }
 export interface Review {
+  actorId?: string
+  at?: string
   stage: StageKey
   version: number
   score?: number
@@ -67,6 +85,15 @@ export interface Review {
   committed: boolean
 }
 export interface Application {
+  versions?: Omit<Application, 'versions' | 'statusEvents' | 'history'>[]
+  statusEvents?: {
+    at: string
+    actorId: string
+    action: string
+    version: number
+    from: string
+    to: string
+  }[]
   id: string
   activityId: string
   captainId: string
@@ -107,6 +134,7 @@ export interface GrantRequest {
   decision?: string
 }
 export interface Audit {
+  context?: Record<string, unknown>
   id: string
   actorId: string
   action: string
@@ -164,13 +192,21 @@ export const statusLabels: Record<string, string> = {
   unselected: '未录取',
   withdrawn: '已撤回',
 }
-export function activityStatus(a: Activity, now = new Date()) {
+export function activityStatus(a: Activity, now = new Date(), applications?: Application[]) {
   if (a.archived) return '已归档'
   if (a.removed) return '已下架'
   if (!a.published) return '草稿'
   if (a.closedAt || a.resultPublished) return '已结束'
   if (now < new Date(a.start)) return '待开始'
   if (now < new Date(a.end)) return '报名中'
+  if (applications && !a.external) {
+    const rows = applications.filter((r) => r.activityId === a.id && r.status !== 'withdrawn')
+    if (rows.some((r) => ['waiting', 'initial', 'written', 'interview'].includes(r.status)))
+      return '审核中'
+    if (rows.length) return '待发布结果'
+  }
+  if (!applications && ['审核中', '待发布结果'].includes(a.lifecycleStatus || ''))
+    return a.lifecycleStatus!
   return '已截止'
 }
 export function defaultStages(): Stage[] {

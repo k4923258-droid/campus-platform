@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { reviewCounts } from '@/domain/history'
+import { downloadRedacted } from '@/domain/redact'
 import { computed, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Download, Send } from 'lucide-vue-next'
@@ -21,6 +23,14 @@ const editing = ref<Activity>()
 const tab = ref('applications')
 const status = ref('')
 const selected = ref<Application[]>([])
+const batchOpen = ref(false),
+  batchBusy = ref(false)
+const batchPassed = ref(true),
+  batchScore = ref(60),
+  batchNote = ref('')
+const batchResults = ref<{ id: string; ok: boolean; message: string }[]>([])
+const batchTasks = ref<{ id: string; version: number; stage: string }[]>([])
+const batchMode = ref('pass')
 const review = ref<Application>()
 const reviewOpen = ref(false)
 const score = ref(60)
@@ -73,27 +83,43 @@ async function saveReview(commit: boolean) {
   )
     reviewOpen.value = false
 }
-async function batch() {
+function prepareBatch() {
   if (!selected.value.length) return ElMessage.warning('请先选择报名')
-  if (new Set(selected.value.map((r) => r.status)).size !== 1)
-    return ElMessage.warning('只能批量处理同一环节')
-  if (a.value?.stages.find((st) => st.key === selected.value[0]?.status)?.mode === 'score')
-    return ElMessage.warning('100分制请逐条录入分数')
+  if (
+    new Set(selected.value.map((r) => r.status)).size !== 1 ||
+    !['initial', 'written', 'interview'].includes(selected.value[0]!.status)
+  )
+    return ElMessage.warning('请选择同一人工审核环节的报名')
+  batchResults.value = []
+  batchTasks.value = selected.value.map((r) => ({ id: r.id, version: r.version, stage: r.status }))
+  batchMode.value =
+    a.value?.stages.find((st) => st.key === batchTasks.value[0]?.stage)?.mode || 'pass'
+  batchOpen.value = true
+}
+async function batch() {
+  if (batchBusy.value) return
+  batchBusy.value = true
+  const tasks = batchTasks.value.map((r) => ({ ...r }))
   try {
-    await ElMessageBox.confirm('将正式确认所选报名通过本环节，是否继续？', '批量审核')
-    for (const r of selected.value)
-      if (
-        !(await act('review.save', {
-          id: r.id,
-          version: r.version,
-          stage: r.status,
-          passed: true,
-          note: '批量通过',
+    batchResults.value = []
+    for (const task of tasks) {
+      try {
+        await s.act('review.save', {
+          ...task,
+          passed: batchPassed.value,
+          score: batchScore.value,
+          note: batchNote.value,
           commit: true,
-        }))
-      )
-        break
-  } catch {}
+        })
+        batchResults.value.push({ id: task.id, ok: true, message: '已确认并流转' })
+      } catch (e) {
+        batchResults.value.push({ id: task.id, ok: false, message: (e as Error).message })
+      }
+    }
+    ElMessage.info('批量处理完成，请查看逐条结果；失败项未作修改')
+  } finally {
+    batchBusy.value = false
+  }
 }
 function editSlot(v?: Slot) {
   slot.value = v
@@ -230,26 +256,17 @@ function create() {
             >
           </div>
         </div>
-        <div class="metric-grid four">
-          <div
-            v-for="st in ['initial', 'written', 'interview', 'eligible']"
-            :key="st"
-            class="metric"
-          >
-            <span>{{ statusLabels[st] }}</span
-            ><b>{{ rows.filter((r) => r.status === st).length }}</b
-            ><small
-              >通过
-              {{
-                rows.filter((r) => r.reviews.some((v) => v.stage === st && v.committed && v.passed))
-                  .length
-              }}
-              / 未通过
-              {{
-                rows.filter((r) =>
-                  r.reviews.some((v) => v.stage === st && v.committed && !v.passed),
-                ).length
-              }}</small
+        <div class="metric-grid">
+          <div v-for="st in a.stages.filter((st) => st.enabled)" :key="st.key" class="metric">
+            <span>{{ stageLabels[st.key] }} · 总人数</span
+            ><b>{{ reviewCounts(a, rows, st.key).total }}</b>
+            <small
+              >待处理 {{ reviewCounts(a, rows, st.key).pending }} / 通过
+              {{ reviewCounts(a, rows, st.key).passed }} / 未通过
+              {{ reviewCounts(a, rows, st.key).failed }}</small
+            >
+            <small v-if="a.team"
+              >按成员人数统计，共 {{ reviewCounts(a, rows, st.key).teams }} 队</small
             >
           </div>
         </div>
@@ -263,7 +280,7 @@ function create() {
                     :key="key"
                     :label="label"
                     :value="key" /></el-select
-                ><el-button @click="batch">批量通过本环节</el-button
+                ><el-button @click="prepareBatch">批量审核本环节</el-button
                 ><span class="muted">共 {{ filtered.length }} 条</span>
               </div>
               <el-table :data="filtered" @selection-change="selected = $event"
@@ -306,6 +323,21 @@ function create() {
                 :closable="false"
                 type="info"
               />
+              <el-collapse
+                ><el-collapse-item title="历次发布名单与更正记录"
+                  ><div v-for="pub in a.resultHistory || []" :key="pub.version">
+                    <p>第{{ pub.version }}版 · {{ pub.at }} · 操作人 {{ pub.actorId }}</p>
+                    <p>
+                      录取：{{ pub.admittedIds.join('、') || '无' }}；未录取：{{
+                        pub.unselectedIds.join('、') || '无'
+                      }}
+                    </p>
+                    <p v-if="pub.withdrawnAt">
+                      撤回：{{ pub.withdrawnAt }} / {{ pub.withdrawnBy }} / {{ pub.reason }}
+                    </p>
+                  </div></el-collapse-item
+                ></el-collapse
+              >
               <p>发布版本：{{ a.resultVersion }} · {{ a.resultPublished ? '已发布' : '未发布' }}</p>
               <el-checkbox-group v-model="admitted"
                 ><div
@@ -326,7 +358,21 @@ function create() {
                 ><el-button v-else @click="withReason('result.withdraw')">撤回并更正结果</el-button>
               </div></el-tab-pane
             ><el-tab-pane label="变更与审计" name="audit"
-              ><el-table :data="s.data?.audits.filter((v) => v.activityId === a?.id)"
+              ><el-button
+                @click="downloadRedacted(s.data?.audits.filter((v) => v.activityId === a?.id))"
+                >导出脱敏排查日志</el-button
+              >
+              <el-collapse
+                ><el-collapse-item title="公告与时间变更明细"
+                  ><div v-for="(change, i) in a.changeHistory || []" :key="i">
+                    <p>{{ change.at }} · {{ change.actorId }}</p>
+                    <p v-for="(delta, key) in change.changes" :key="key">
+                      {{ key }}：{{ delta.before }} → {{ delta.after }}
+                    </p>
+                  </div></el-collapse-item
+                ></el-collapse
+              >
+              <el-table :data="s.data?.audits.filter((v) => v.activityId === a?.id)"
                 ><el-table-column prop="at" label="时间" min-width="180" /><el-table-column
                   prop="action"
                   label="操作"
@@ -337,6 +383,46 @@ function create() {
         </div>
       </section>
     </div>
+    <el-dialog
+      v-model="batchOpen"
+      title="批量审核"
+      width="600px"
+      class="responsive-dialog"
+      :close-on-click-modal="!batchBusy"
+      :close-on-press-escape="!batchBusy"
+      :show-close="!batchBusy"
+    >
+      <p>对所选同环节报名逐条确认，每条独立提交，失败项可修正后重选。</p>
+      <el-input-number
+        v-if="batchMode === 'score'"
+        v-model="batchScore"
+        :min="0"
+        :max="100"
+        :step="1"
+        step-strictly
+        :disabled="batchBusy || !!batchResults.length"
+        aria-label="批量分数"
+      />
+      <el-radio-group v-else v-model="batchPassed" :disabled="batchBusy || !!batchResults.length"
+        ><el-radio :value="true">通过</el-radio
+        ><el-radio :value="false">不通过</el-radio></el-radio-group
+      >
+      <el-input
+        v-model="batchNote"
+        placeholder="审核备注"
+        :disabled="batchBusy || !!batchResults.length"
+      />
+      <el-button
+        type="primary"
+        :loading="batchBusy"
+        :disabled="!!batchResults.length"
+        @click="batch"
+        >确认提交所选 {{ batchTasks.length }} 条</el-button
+      >
+      <p v-for="v in batchResults" :key="v.id">
+        {{ v.id }} · {{ v.ok ? '成功' : '失败' }}：{{ v.message }}
+      </p>
+    </el-dialog>
     <el-dialog
       v-model="editor"
       :title="editing ? '活动配置' : '创建新活动'"
@@ -366,8 +452,28 @@ function create() {
         <p v-for="(r, i) in review.reviews" :key="i">
           {{ stageLabels[r.stage] }}：{{ r.committed ? '已确认' : '草稿' }} /
           {{ r.passed ? '通过' : '未通过' }} {{ r.score !== undefined ? r.score + '分' : '' }}
-          {{ r.note }}
+          {{ r.note }} · {{ r.at }} · {{ r.actorId }}
         </p>
+        <el-collapse
+          ><el-collapse-item title="旧版报名与已失效的审核结论"
+            ><div v-for="v in review.versions || []" :key="v.version">
+              <h4>版本 {{ v.version }} · {{ v.updatedAt }} · {{ v.memberNos.join('、') }}</h4>
+              <p v-for="(value, key) in v.answers" :key="key">
+                {{ key }}：<el-button
+                  v-if="String(value).startsWith('file:')"
+                  link
+                  @click="attachment(value)"
+                  >查看旧版附件</el-button
+                ><span v-else>{{ value }}</span>
+              </p>
+              <p v-for="(conclusion, i) in v.reviews" :key="i">
+                {{ stageLabels[conclusion.stage] }} / {{ conclusion.committed ? '正式' : '草稿' }} /
+                {{ conclusion.passed ? '通过' : '未通过' }} / {{ conclusion.score }} /
+                {{ conclusion.note }} / {{ conclusion.at }} / {{ conclusion.actorId }}
+              </p>
+            </div></el-collapse-item
+          ></el-collapse
+        >
         <el-divider /><template v-if="['initial', 'written', 'interview'].includes(review.status)"
           ><el-form label-position="top"
             ><el-form-item

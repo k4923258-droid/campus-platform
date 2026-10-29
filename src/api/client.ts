@@ -1,3 +1,4 @@
+import { validateUpload } from './file-validation'
 import axios from 'axios'
 export const mockMode = import.meta.env.VITE_API_MODE !== 'server'
 export const http = axios.create({
@@ -23,7 +24,7 @@ http.interceptors.response.use(
 export const command = async (action: string, p: unknown = {}) =>
   (await http.post('/commands/' + action, p)).data
 export async function upload(file: File) {
-  if (file.size > 20 * 1024 * 1024) throw new Error('单文件不能超过20MB')
+  validateUpload(file)
   const data = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(String(reader.result))

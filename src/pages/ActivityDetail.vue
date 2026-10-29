@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { isRegistered } from '@/domain/history'
+
 import { computed, ref, watch, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import MarkdownIt from 'markdown-it'
@@ -18,7 +20,7 @@ const html = computed(() =>
   DOMPurify.sanitize(new MarkdownIt({ html: false, linkify: true }).render(a.value?.body || '')),
 )
 const registered = computed(() =>
-  s.data?.applications.some((r) => r.activityId === a.value?.id && r.status !== 'withdrawn'),
+  isRegistered(s.data?.applications || [], a.value?.id || '', s.me?.studentNo),
 )
 watch(
   () => a.value?.poster,

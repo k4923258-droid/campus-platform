@@ -1,3 +1,5 @@
+import { captureApplications, applicationFiles, posterHistoryFiles } from './history'
+import { activityStatus } from './types'
 import { hashPassword } from './seed'
 import {
   stageLabels,
@@ -43,17 +45,26 @@ function log(s: State, u: User, action: string, detail = '', activityId?: string
   s.audits.unshift({ id: uid(), actorId: u.id, action, detail, activityId, at: stamp(s) })
 }
 export function advance(s: State, a: Activity, r: Application) {
+  if (a.team && r.memberNos.length < a.minTeam) {
+    r.status = 'waiting'
+    return
+  }
   while (r.stageIndex < a.stages.length) {
     const stage = a.stages[r.stageIndex]!
     if (!stage.enabled || stage.automatic) {
-      if (stage.enabled)
+      if (stage.enabled) {
         r.reviews.push({
+          at: stamp(s),
+          actorId: 'system',
           stage: stage.key,
           version: r.version,
           passed: true,
           note: '默认通过',
           committed: true,
         })
+        r.history.push(`${stamp(s)} ${stageLabels[stage.key]}默认通过`)
+        appNotice(s, r, `${a.title}：${stageLabels[stage.key]}默认通过。`)
+      }
       r.stageIndex++
       continue
     }
@@ -63,6 +74,7 @@ export function advance(s: State, a: Activity, r: Application) {
   r.status = 'eligible'
 }
 export function tick(s: State) {
+  const before = structuredClone(s.applications)
   for (const a of s.activities) {
     if (!a.published || a.archived || a.removed || a.closedAt || a.resultPublished) continue
     for (const r of s.applications.filter(
@@ -93,6 +105,7 @@ export function tick(s: State) {
     )
       archive(s, a)
   }
+  captureApplications(s, before, 'system', 'tick')
 }
 export function snapshot(s: State, userId?: string): Snapshot {
   const u = s.users.find((u) => u.id === userId)
@@ -113,9 +126,14 @@ export function snapshot(s: State, userId?: string): Snapshot {
   ])
   const readableFiles = new Set<string>()
   applications.forEach((r) =>
-    Object.values(r.answers).forEach((v) => {
-      if (typeof v === 'string' && v.startsWith('file:')) readableFiles.add(v.slice(5))
-    }),
+    applicationFiles(
+      r,
+      s.activities.find((a) => a.id === r.activityId)!,
+      manages(
+        u,
+        s.activities.find((a) => a.id === r.activityId)!,
+      ),
+    ).forEach((id) => readableFiles.add(id)),
   )
   activities.forEach((a) => {
     if (a.poster.startsWith('file:')) readableFiles.add(a.poster.slice(5))
@@ -125,15 +143,24 @@ export function snapshot(s: State, userId?: string): Snapshot {
     ...structuredClone(s),
     users: s.users.filter((v) => relevantIds.has(v.id)).map(publicUser),
     me: u ? publicUser(u) : undefined,
-    activities: structuredClone(activities),
+    activities: structuredClone(activities).map((a) => {
+      a.lifecycleStatus = activityStatus(a, clock(s), s.applications)
+      if (!manages(u, a)) {
+        delete a.resultHistory
+        delete a.changeHistory
+      }
+      return a
+    }),
     applications: structuredClone(applications).map((r) => {
       if (
         !manages(
           u,
           s.activities.find((a) => a.id === r.activityId)!,
         )
-      )
+      ) {
         r.reviews = r.reviews.filter((v) => v.committed)
+        delete r.versions
+      }
       return r
     }),
     organizations: structuredClone(s.organizations),
@@ -230,6 +257,8 @@ export async function execute(
   }
   const u = s.users.find((v) => v.id === userId)
   ensure(u, '请先登录', 401)
+  const beforeApplications = structuredClone(s.applications)
+  const beforeActivities = structuredClone(s.activities)
   let activityId: string | undefined
   switch (action) {
     case 'activity.save': {
@@ -483,6 +512,8 @@ export async function execute(
         (v) => !(v.stage === stage.key && v.version === r.version && !v.committed),
       )
       r.reviews.push({
+        actorId: u.id,
+        at: stamp(s),
         stage: stage.key,
         version: r.version,
         score: stage.mode === 'score' ? p.score : undefined,
@@ -570,6 +601,9 @@ export async function execute(
       if (action.endsWith('withdraw')) {
         ensure(a.resultPublished, '尚未发布结果', 409)
         ensure(p.reason?.trim(), '撤回结果须填写原因')
+        const publication = a.resultHistory?.find((v) => v.version === a.resultVersion)
+        if (publication)
+          Object.assign(publication, { withdrawnAt: stamp(s), withdrawnBy: u.id, reason: p.reason })
         a.resultPublished = false
         s.applications
           .filter((r) => r.activityId === a.id && ['admitted', 'unselected'].includes(r.status))
@@ -602,6 +636,16 @@ export async function execute(
         })
         a.resultPublished = true
         a.resultVersion++
+        a.resultHistory = [
+          ...(a.resultHistory || []),
+          {
+            version: a.resultVersion,
+            at: stamp(s),
+            actorId: u.id,
+            admittedIds: rows.filter((r) => r.status === 'admitted').map((r) => r.id),
+            unselectedIds: rows.filter((r) => r.status === 'unselected').map((r) => r.id),
+          },
+        ]
       }
       activityId = a.id
       break
@@ -754,6 +798,16 @@ export async function execute(
     default:
       throw new DomainError('未知操作', 404)
   }
+  captureApplications(s, beforeApplications, u.id, action)
+  const a = s.activities.find((v) => v.id === activityId)
+  const oldActivity = beforeActivities.find((v) => v.id === activityId)
+  if (action === 'activity.save' && a && oldActivity) {
+    const changes: Record<string, { before: unknown; after: unknown }> = {}
+    for (const key of ['title', 'body', 'poster', 'start', 'end'] as const)
+      if (a[key] !== oldActivity[key]) changes[key] = { before: oldActivity[key], after: a[key] }
+    if (Object.keys(changes).length)
+      a.changeHistory = [...(a.changeHistory || []), { at: stamp(s), actorId: u.id, changes }]
+  }
   log(
     s,
     u,
@@ -761,6 +815,30 @@ export async function execute(
     ['activity.archive'].includes(action) ? '仅保留汇总' : p.reason || '',
     activityId,
   )
+  const audit = s.audits[0]!
+  if (action === 'review.save') {
+    const before = beforeApplications.find((r) => r.id === p.id)!
+    const after = s.applications.find((r) => r.id === p.id)!
+    const conclusion = after.reviews.find(
+      (v) => v.stage === before.status && v.version === after.version,
+    )
+    audit.context = {
+      applicationId: p.id,
+      version: after.version,
+      stage: before.status,
+      beforeStatus: before.status,
+      afterStatus: after.status,
+      ...conclusion,
+    }
+    audit.detail = JSON.stringify(audit.context)
+  } else if (
+    action === 'activity.save' &&
+    a &&
+    (a.changeHistory?.length || 0) > (oldActivity?.changeHistory?.length || 0)
+  ) {
+    audit.context = { changes: a.changeHistory![a.changeHistory!.length - 1]!.changes }
+    audit.detail = JSON.stringify(audit.context)
+  }
   tick(s)
   return { ok: true }
 }
@@ -771,24 +849,25 @@ export function archive(s: State, a: Activity) {
     admitted: rows.filter((r) => r.status === 'admitted').length,
     failed: rows.filter((r) => ['rejected', 'unselected'].includes(r.status)).length,
   }
-  const deletedFiles = new Set(
-    rows.flatMap((r) =>
-      Object.values(r.answers)
-        .filter((v): v is string => typeof v === 'string' && v.startsWith('file:'))
-        .map((v) => v.slice(5)),
-    ),
-  )
+  const deletedFiles = new Set([
+    ...rows.flatMap((r) => applicationFiles(r, a)),
+    ...posterHistoryFiles(a),
+  ])
   s.applications = s.applications.filter((r) => r.activityId !== a.id)
   s.slots = s.slots.filter((v) => v.activityId !== a.id)
   s.notices = s.notices.filter((v) => v.activityId !== a.id)
   s.audits = s.audits.filter((v) => v.activityId !== a.id)
-  const stillUsed = new Set(
-    s.applications.flatMap((r) =>
-      Object.values(r.answers)
-        .filter((v): v is string => typeof v === 'string' && v.startsWith('file:'))
-        .map((v) => v.slice(5)),
+  a.resultHistory = []
+  a.changeHistory = []
+  const stillUsed = new Set([
+    ...s.applications.flatMap((r) =>
+      applicationFiles(
+        r,
+        s.activities.find((a) => a.id === r.activityId)!,
+      ),
     ),
-  )
+    ...s.activities.flatMap(posterHistoryFiles),
+  ])
   s.attachments = s.attachments.filter(
     (f) =>
       !deletedFiles.has(f.id) ||

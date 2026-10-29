@@ -164,7 +164,7 @@ const stateClass = (a: Activity) =>
           <button :class="{ selected: !status }" :aria-pressed="!status" @click="status = ''">
             全部状态</button
           ><button
-            v-for="v in ['待开始', '报名中', '已截止', '已结束']"
+            v-for="v in ['待开始', '报名中', '已截止', '审核中', '待发布结果', '已结束']"
             :key="v"
             :class="{ selected: status === v }"
             :aria-pressed="status === v"

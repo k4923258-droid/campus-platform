@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { downloadRedacted } from '@/domain/redact'
 import { ref, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { readTable, writeTable } from '@/api/spreadsheet'
@@ -256,6 +257,7 @@ async function template() {
             /><el-button @click="act('demo.time', { now: time })">应用演示时间</el-button>
           </div></el-tab-pane
         ><el-tab-pane label="审计日志" name="audit"
+          ><el-button @click="downloadRedacted(s.data?.audits)">导出脱敏排查日志</el-button
           ><el-table :data="s.data?.audits"
             ><el-table-column prop="at" label="时间" min-width="190" /><el-table-column
               prop="action"

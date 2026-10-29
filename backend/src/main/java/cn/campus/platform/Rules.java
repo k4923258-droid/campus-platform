@@ -198,6 +198,10 @@ public class Rules {
   }
 
   static void advance(ObjectNode s, ObjectNode a, ObjectNode r) {
+    if (flag(a, "team") && r.path("memberNos").size() < num(a, "minTeam")) {
+      r.put("status", "waiting");
+      return;
+    }
     while (num(r, "stageIndex") < a.path("stages").size()) {
       var st = a.path("stages").get(num(r, "stageIndex"));
       if (!flag(st, "enabled") || flag(st, "automatic")) {
@@ -207,8 +211,12 @@ public class Rules {
             .put("version", num(r, "version"))
             .put("passed", true)
             .put("committed", true)
-            .put("note", "默认通过");
+            .put("note", "默认通过")
+            .put("at", stamp(s))
+            .put("actorId", "system");
           ((ArrayNode) r.get("reviews")).add(review);
+          history(s, r, text(st, "key") + "默认通过");
+          appNotice(s, r, text(a, "title") + "：" + text(st, "key") + "默认通过。");
         }
         r.put("stageIndex", num(r, "stageIndex") + 1);
       } else {
@@ -220,6 +228,7 @@ public class Rules {
   }
 
   public static void tick(ObjectNode s) {
+    var before = s.deepCopy();
     for (var a : list(s, "activities")) {
       if (
         !flag(a, "published") ||
@@ -260,6 +269,7 @@ public class Rules {
         !now(s).isBefore(instant(text(future.get(), "end")).plusSeconds(86400))
       ) archive(s, a);
     }
+    History.capture(s, before, "system", "tick");
   }
 
   public static ObjectNode snapshot(ObjectNode s, String userId) {
@@ -280,6 +290,10 @@ public class Rules {
       )
       .toList();
     out.set("activities", JSON.valueToTree(activities));
+    for (var a : list(out, "activities")) {
+      a.put("lifecycleStatus", History.activityStatus(s, a));
+      if (!manages(u, a)) a.remove(List.of("resultHistory", "changeHistory"));
+    }
     var rows = list(s, "applications")
       .stream()
       .filter(
@@ -296,6 +310,7 @@ public class Rules {
           if (flag(v, "committed")) committed.add(v);
         });
         row.set("reviews", committed);
+        row.remove("versions");
       }
     var users = arr();
     Set<String> ids = new HashSet<>();
@@ -362,11 +377,13 @@ public class Rules {
     out.set("slots", slots);
     Set<String> files = new HashSet<>();
     for (var r : rows)
-      r.path("answers")
-        .elements()
-        .forEachRemaining(v -> {
-          if (v.asText().startsWith("file:")) files.add(v.asText().substring(5));
-        });
+      files.addAll(
+        History.applicationFiles(
+          r,
+          find(s, "activities", text(r, "activityId")),
+          manages(u, find(s, "activities", text(r, "activityId")))
+        )
+      );
     for (var a : activities)
       if (text(a, "poster").startsWith("file:")) files.add(text(a, "poster").substring(5));
     out.set(
@@ -423,6 +440,7 @@ public class Rules {
     tick(s);
     var u = find(s, "users", userId == null ? "" : userId);
     check(u != null, 401, "请先登录");
+    var before = s.deepCopy();
     String activityId = null;
     switch (action) {
       case "activity.save" -> {
@@ -690,7 +708,9 @@ public class Rules {
           .put("version", num(r, "version"))
           .put("passed", passed)
           .put("note", text(p, "note"))
-          .put("committed", flag(p, "commit"));
+          .put("committed", flag(p, "commit"))
+          .put("actorId", userId)
+          .put("at", stamp(s));
         if (scored) rev.put("score", num(p, "score"));
         reviews.add(rev);
         r.set("reviews", reviews);
@@ -783,6 +803,11 @@ public class Rules {
         if (action.endsWith("withdraw")) {
           check(flag(a, "resultPublished"), 409, "尚未发布结果");
           check(!text(p, "reason").isBlank(), "请填写更正原因");
+          for (var pub : History.array(a, "resultHistory"))
+            if (num(pub, "version") == num(a, "resultVersion")) ((ObjectNode) pub)
+              .put("withdrawnAt", stamp(s))
+              .put("withdrawnBy", userId)
+              .put("reason", text(p, "reason"));
           a.put("resultPublished", false);
           applications(s, a)
             .stream()
@@ -814,6 +839,19 @@ public class Rules {
             appNotice(s, r, text(a, "title") + "：" + (yes ? "已录取" : "未录取"));
           });
           a.put("resultPublished", true).put("resultVersion", num(a, "resultVersion") + 1);
+          var publication = obj()
+            .put("version", num(a, "resultVersion"))
+            .put("at", stamp(s))
+            .put("actorId", userId);
+          var admitted = arr();
+          var unselected = arr();
+          rows.forEach(row -> {
+            if (text(row, "status").equals("admitted")) admitted.add(text(row, "id"));
+            else unselected.add(text(row, "id"));
+          });
+          publication.set("admittedIds", admitted);
+          publication.set("unselectedIds", unselected);
+          History.array(a, "resultHistory").add(publication);
         }
         activityId = text(a, "id");
       }
@@ -994,6 +1032,7 @@ public class Rules {
       activityId,
       action.equals("activity.archive") ? "仅保留汇总" : text(p, "reason")
     );
+    History.finish(s, before, userId, action, p, activityId);
     tick(s);
     return obj().put("ok", true);
   }
@@ -1020,14 +1059,9 @@ public class Rules {
         )
     );
     Set<String> files = new HashSet<>();
-    rows.forEach(r ->
-      r
-        .path("answers")
-        .elements()
-        .forEachRemaining(v -> {
-          if (v.asText().startsWith("file:")) files.add(v.asText().substring(5));
-        })
-    );
+    rows.forEach(r -> files.addAll(History.applicationFiles(r, a, true)));
+    files.addAll(History.posterFiles(a));
+    a.remove(List.of("resultHistory", "changeHistory"));
     String id = text(a, "id");
     remove(s, "applications", r -> text(r, "activityId").equals(id));
     remove(s, "slots", r -> text(r, "activityId").equals(id));
@@ -1035,14 +1069,10 @@ public class Rules {
     remove(s, "audits", r -> text(r, "activityId").equals(id));
     Set<String> used = new HashSet<>();
     list(s, "applications").forEach(r ->
-      r
-        .path("answers")
-        .elements()
-        .forEachRemaining(v -> {
-          if (v.asText().startsWith("file:")) used.add(v.asText().substring(5));
-        })
+      used.addAll(History.applicationFiles(r, find(s, "activities", text(r, "activityId")), true))
     );
     list(s, "activities").forEach(v -> {
+      used.addAll(History.posterFiles(v));
       if (text(v, "poster").startsWith("file:")) used.add(text(v, "poster").substring(5));
     });
     remove(s, "attachments", f -> files.contains(text(f, "id")) && !used.contains(text(f, "id")));
