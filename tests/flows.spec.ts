@@ -1,4 +1,76 @@
 import { test, expect, type Page } from '@playwright/test'
+import fs from 'node:fs/promises'
+
+test('补充 / 批量审核过时项失败后继续处理、人数统计及脱敏导出', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.locator('h1')).toHaveText('活动信息')
+  const ids = await page.evaluate(async () => {
+    const ids: string[] = []
+    for (const no of ['20260001', '20260002']) {
+      const login = await fetch('/api/v1/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentNo: no, password: 'Demo123!' }),
+      }).then((r) => r.json())
+      const response = await fetch('/api/v1/commands/application.save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Demo-Session': login.token },
+        body: JSON.stringify({
+          activityId: 'photo-fall',
+          answers: { intro: '批量检查', grade: '大一' },
+        }),
+      })
+      if (!response.ok) throw new Error('准备报名失败')
+      const state = await fetch('/api/v1/snapshot', {
+        headers: { 'X-Demo-Session': login.token },
+      }).then((r) => r.json())
+      ids.push(state.applications[0].id)
+    }
+    return ids
+  })
+  await login(page, '20240001')
+  await page.getByRole('link', { name: '负责人工作台' }).click()
+  await expect(page.locator('.metric').first()).toContainText('待处理 2')
+  await page.locator('.el-table__header-wrapper .el-checkbox').first().click()
+  await page.getByRole('button', { name: '批量审核本环节' }).click()
+  const dialog = page.getByRole('dialog', { name: '批量审核' })
+  await dialog.getByText('不通过', { exact: true }).click()
+  await dialog.getByPlaceholder('审核备注').fill('联系13812345678')
+  await page.evaluate(async (id) => {
+    const response = await fetch('/api/v1/commands/review.save', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Demo-Session': sessionStorage.getItem('demo-session')!,
+      },
+      body: JSON.stringify({ id, version: 1, stage: 'initial', passed: true, commit: true }),
+    })
+    if (!response.ok) throw new Error('准备过时环节失败')
+  }, ids[0]!)
+  await dialog.getByRole('button', { name: /确认提交所选/ }).click()
+  await expect(dialog).toContainText('失败')
+  await expect(dialog).toContainText('成功')
+  await dialog.getByRole('button', { name: '关闭此对话框' }).click()
+  await expect(page.locator('.metric').first()).toContainText('待处理 0')
+  await expect(page.locator('.metric').first()).toContainText('通过 1 / 未通过 1')
+  await page.getByRole('tab', { name: '变更与审计' }).click()
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: '导出脱敏排查日志' }).click()
+  const download = await downloadPromise
+  const body = await fs.readFile((await download.path())!, 'utf8')
+  expect(body).toContain('138****5678')
+  expect(body).not.toContain('13812345678')
+  const oldToken = await page.evaluate(() => sessionStorage.getItem('demo-session'))
+  await page.getByRole('button', { name: '退出登录' }).click()
+  await page.reload()
+  await expect(page.getByRole('button', { name: '登录 / 注册' })).toBeVisible()
+  const session = await page.evaluate(
+    async (token) =>
+      fetch('/api/v1/snapshot', { headers: { 'X-Demo-Session': token! } }).then((r) => r.json()),
+    oldToken,
+  )
+  expect(session.me).toBeUndefined()
+})
 test('活动信息 / 校区、搜索、空结果和竞赛切换', async ({ page }) => {
   await page.goto('/')
   await expect(page.locator('h1')).toHaveText('活动信息')
