@@ -77,6 +77,8 @@ npm.cmd run dev
 ./scripts/start-local-mail.ps1
 ```
 
+本地启动入口在Windows PowerShell 5.1中会自动查找并转交给PowerShell 7；脚本使用UTF-8 BOM编码。IDEA终端也可直接设置为`pwsh.exe`。数据库脚本通过异常报告失败，不依赖可能为空或保留旧值的`$LASTEXITCODE`判断。
+
 该脚本保留原演示库，使用独立的 `campus_v05_local` 数据库与附件目录；首次从官方发布下载并校验 Mailpit。网站为 http://127.0.0.1:8085/ ，测试收件箱为 http://127.0.0.1:8025/ 。MySQL、Node、JDK要求与下文一致。
 
 测试邮箱可使用一个未占用的数字学号加 `@stu.neu.edu.cn`。验证码只进入本地 Mailpit，不会送往学校邮箱；页面与账号标记为本地测试身份。纯浏览器模拟版则在注册弹窗中提供“模拟收件箱”入口。上述两种结果都不算真实校邮认证。

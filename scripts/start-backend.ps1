@@ -1,4 +1,20 @@
-param([switch]$SkipBuild,[switch]$Maintenance)
+﻿param([switch]$SkipBuild,[switch]$Maintenance)
+# Delegate Windows PowerShell to the PowerShell 7 runtime used by these scripts.
+if ($PSVersionTable.PSVersion.Major -lt 7) {
+  $pwshCommand = Get-Command pwsh.exe -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+  $pwshPath = if ($pwshCommand) { $pwshCommand.Source } else { $null }
+  if (-not $pwshPath) {
+    $bundledPwsh = Join-Path $env:USERPROFILE '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/powershell/pwsh.exe'
+    if (Test-Path -LiteralPath $bundledPwsh) { $pwshPath = $bundledPwsh }
+  }
+  if (-not $pwshPath) { throw 'PowerShell 7 is required. Install it and run this script with pwsh.exe.' }
+  $forwardArgs = @('-NoProfile', '-File', $PSCommandPath)
+  if ($SkipBuild) { $forwardArgs += '-SkipBuild' }
+  if ($Maintenance) { $forwardArgs += '-Maintenance' }
+  & $pwshPath @forwardArgs
+  if ($LASTEXITCODE -ne 0) { throw ('PowerShell 7 startup failed (exit ' + $LASTEXITCODE + ').') }
+  return
+}
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot -Parent
 & (Join-Path $PSScriptRoot 'local-db.ps1') start

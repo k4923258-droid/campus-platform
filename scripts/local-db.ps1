@@ -1,4 +1,4 @@
-param([ValidateSet('start','stop')][string]$Action='start')
+﻿param([ValidateSet('start','stop')][string]$Action='start')
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot -Parent
 $runtimeRoot=Join-Path $projectRoot 'backend/data'
@@ -9,12 +9,12 @@ $mysql=Join-Path $mysqlRoot 'bin/mysql.exe'
 $runtimeFile=Join-Path $runtimeRoot 'local-db.json'
 if($Action -eq 'stop'){
  if(Test-Path -LiteralPath $runtimeFile){$config=Get-Content -LiteralPath $runtimeFile -Raw|ConvertFrom-Json;$env:MYSQL_PWD=$config.rootPassword;try{& (Join-Path $mysqlRoot 'bin/mysqladmin.exe') --protocol=TCP --host=127.0.0.1 --port=3307 --user=root shutdown;if($LASTEXITCODE -ne 0){throw '数据库停止失败'}}finally{Remove-Item Env:MYSQL_PWD -ErrorAction SilentlyContinue}}
- exit
+ return
 }
 if(-not(Test-Path -LiteralPath $mysqld)){throw '未找到 MySQL 8.4，请先安装并配置 mysqlRoot。'}
 New-Item -ItemType Directory -Force -Path $runtimeRoot|Out-Null
 $port=Get-NetTCPConnection -LocalPort 3307 -State Listen -ErrorAction SilentlyContinue
-if($port){if(Test-Path -LiteralPath $runtimeFile){Write-Output '项目数据库端口3307已监听。';exit};throw '3307端口已被其他程序占用。'}
+if($port){if(Test-Path -LiteralPath $runtimeFile){Write-Output '项目数据库端口3307已监听。';return};throw '3307端口已被其他程序占用。'}
 if(-not(Test-Path -LiteralPath (Join-Path $dataRoot 'mysql'))){& $mysqld --no-defaults --initialize-insecure "--basedir=$mysqlRoot" "--datadir=$dataRoot";if($LASTEXITCODE -ne 0){throw '初始化项目独立数据库失败'}}
 $arguments=@('--no-defaults',('"--basedir='+$mysqlRoot+'"'),('"--datadir='+$dataRoot+'"'),'--port=3307','--bind-address=127.0.0.1','--mysqlx=OFF',('"--log-error='+(Join-Path $runtimeRoot 'mysql.log')+'"'))
 $process=Start-Process -FilePath $mysqld -ArgumentList $arguments -WindowStyle Hidden -PassThru

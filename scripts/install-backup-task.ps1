@@ -1,4 +1,4 @@
-$ErrorActionPreference='Stop'
+﻿$ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot -Parent
 $script=Join-Path $PSScriptRoot 'backup.ps1'
 $powerShellPath=(Get-Command pwsh.exe -ErrorAction Stop).Source

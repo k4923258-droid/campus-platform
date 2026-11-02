@@ -1,4 +1,4 @@
-param([string]$OutputDirectory)
+﻿param([string]$OutputDirectory)
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot -Parent
 $config=Get-Content -LiteralPath (Join-Path $projectRoot 'backend/data/local-db.json') -Raw|ConvertFrom-Json

@@ -1,4 +1,4 @@
-$ErrorActionPreference='Stop'
+﻿$ErrorActionPreference='Stop'
 $runtimeFile=Join-Path (Split-Path $PSScriptRoot -Parent) 'backend/data/local-db.json'
 $config=Get-Content -LiteralPath $runtimeFile -Raw|ConvertFrom-Json
 $rootPassword=[Convert]::ToHexString([Security.Cryptography.RandomNumberGenerator]::GetBytes(24))

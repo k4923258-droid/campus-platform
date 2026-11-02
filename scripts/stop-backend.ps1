@@ -1,4 +1,4 @@
-$ErrorActionPreference='Stop'
+﻿$ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot -Parent
 $jarPath=[IO.Path]::GetFullPath((Join-Path $projectRoot 'backend/target/campus-platform-0.5.0.jar'))
 $listeners=Get-NetTCPConnection -LocalPort 8080 -State Listen -ErrorAction SilentlyContinue

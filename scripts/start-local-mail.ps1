@@ -1,10 +1,25 @@
-param([switch]$SkipBuild)
+﻿param([switch]$SkipBuild)
+# Delegate Windows PowerShell to the PowerShell 7 runtime used by these scripts.
+if ($PSVersionTable.PSVersion.Major -lt 7) {
+  $pwshCommand = Get-Command pwsh.exe -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+  $pwshPath = if ($pwshCommand) { $pwshCommand.Source } else { $null }
+  if (-not $pwshPath) {
+    $bundledPwsh = Join-Path $env:USERPROFILE '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/powershell/pwsh.exe'
+    if (Test-Path -LiteralPath $bundledPwsh) { $pwshPath = $bundledPwsh }
+  }
+  if (-not $pwshPath) { throw 'PowerShell 7 is required. Install it and run this script with pwsh.exe.' }
+  $forwardArgs = @('-NoProfile', '-File', $PSCommandPath)
+  if ($SkipBuild) { $forwardArgs += '-SkipBuild' }
+  & $pwshPath @forwardArgs
+  if ($LASTEXITCODE -ne 0) { throw ('PowerShell 7 startup failed (exit ' + $LASTEXITCODE + ').') }
+  return
+}
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot -Parent
 Push-Location $projectRoot
 try {
+  # PowerShell scripts signal failure by throwing; LASTEXITCODE belongs to native commands.
   & './scripts/local-db.ps1' start
-  if($LASTEXITCODE -ne 0){throw '本地MySQL启动失败'}
   $cfg=Get-Content -LiteralPath 'backend/data/local-db.json' -Raw | ConvertFrom-Json
   $env:MYSQL_PWD=$cfg.rootPassword
   try {
@@ -26,7 +41,7 @@ try {
   if(-not $mailListening) {
     Start-Process -FilePath $mailpit -ArgumentList '--listen 127.0.0.1:8025 --smtp 127.0.0.1:1025 --disable-version-check --database backend/data/mailpit.db' -WorkingDirectory $projectRoot -WindowStyle Hidden -RedirectStandardOutput 'backend/data/mailpit.out.log' -RedirectStandardError 'backend/data/mailpit.err.log' | Out-Null
   }
-  if(-not $SkipBuild){& './scripts/package-server.ps1';if($LASTEXITCODE -ne 0){throw '项目构建失败'}}
+  if(-not $SkipBuild){& './scripts/package-server.ps1'}
   $env:CAMPUS_DB_URL='jdbc:mysql://127.0.0.1:3307/campus_v05_local?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai'
   $env:CAMPUS_DB_USER=$cfg.user;$env:CAMPUS_DB_PASSWORD=$cfg.password
   $env:CAMPUS_DEMO='false';$env:CAMPUS_IDENTITY_MODE='local-mail';$env:CAMPUS_MAIL_ENABLED='true'
