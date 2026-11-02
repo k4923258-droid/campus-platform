@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import assert from 'node:assert/strict'
 const base='http://127.0.0.1:8080/api/v1',cookies=new Map()
-async function req(method,path,body){const headers={'Content-Type':'application/json',Cookie:[...cookies].map(([k,v])=>k+'='+v).join('; ')};if(cookies.has('XSRF-TOKEN'))headers['X-XSRF-TOKEN']=decodeURIComponent(cookies.get('XSRF-TOKEN'));const start=performance.now();const response=await fetch(base+path,{method,headers,body:body?JSON.stringify(body):undefined});for(const value of response.headers.getSetCookie()){const first=value.split(';')[0],i=first.indexOf('=');cookies.set(first.slice(0,i),first.slice(i+1))}const data=await response.json();return{status:response.status,data,ms:performance.now()-start}}
+async function req(method,path,body){const headers={'Content-Type':'application/json',Cookie:[...cookies].map(([k,v])=>k+'='+v).join('; ')};if(cookies.has('XSRF-TOKEN'))headers['X-XSRF-TOKEN']=decodeURIComponent(cookies.get('XSRF-TOKEN'));const start=performance.now();const response=await fetch(base+path,{method,headers,...(body !== undefined && method !== 'GET' ? {body:JSON.stringify(body)} : {})});for(const value of response.headers.getSetCookie()){const first=value.split(';')[0],i=first.indexOf('=');cookies.set(first.slice(0,i),first.slice(i+1))}const data=await response.json();return{status:response.status,data,ms:performance.now()-start}}
 await req('GET','/csrf');assert.equal((await req('POST','/session',{studentNo:'20260001',password:'Demo123!'})).status,200)
 const publicData=(await req('GET','/snapshot')).data;const a=publicData.activities.find(a=>a.id==='photo-fall')
 const form={activityId:a.id,answers:{intro:'重复提交压测',grade:'大一'}}

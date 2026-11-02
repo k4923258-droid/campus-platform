@@ -11,6 +11,9 @@ import { fileUrl } from '@/api/client'
 function login() {
   window.dispatchEvent(new Event('campus-login'))
 }
+function account() {
+  window.dispatchEvent(new Event('campus-account'))
+}
 const s = usePlatform()
 const selected = ref<Application>()
 const edit = ref(false)
@@ -20,7 +23,7 @@ const reason = ref('')
 const orgId = ref('')
 const tab = ref('applications')
 const rows = computed(
-  () => s.data?.applications.filter((r) => r.memberNos.includes(s.me?.studentNo || '')) || [],
+  () => s.data?.applications.filter((r) => r.memberUserIds?.includes(s.me?.id || '')) || [],
 )
 const activity = (r: Application) => s.data!.activities.find((a) => a.id === r.activityId)!
 const slots = computed(
@@ -29,7 +32,7 @@ const slots = computed(
       (slot) => slot.activityId === selected.value?.activityId && !slot.cancelled,
     ) || [],
 )
-async function act(action: string, p: any) {
+async function act(action: string, p: unknown) {
   try {
     await s.act(action, p)
     ElMessage.success('操作成功')
@@ -71,6 +74,17 @@ async function attachment(value: unknown) {
 </script>
 <template>
   <div v-if="s.me" class="page-wrap">
+    <div class="soft-tip">
+      <p>
+        {{
+          s.me.bindingStatus === 'bound'
+            ? '账号已完成本环境的身份绑定'
+            : '身份核验尚未完成，报名和团队操作暂不可用'
+        }}
+        · {{ s.me.maskedEmail || '尚未绑定邮箱' }}
+      </p>
+      <el-button @click="account">账号核验与邮箱</el-button>
+    </div>
     <div class="section-heading">
       <div>
         <span class="eyebrow">学生中心</span>

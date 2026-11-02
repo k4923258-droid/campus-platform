@@ -1,0 +1,24 @@
+{
+  "suites": [
+    {
+      "name": "cn.campus.platform.HistoryTest",
+      "tests": 8,
+      "passed": true,
+      "timestamp": null
+    },
+    {
+      "name": "cn.campus.platform.IdentityTest",
+      "tests": 8,
+      "passed": true,
+      "timestamp": null
+    },
+    {
+      "name": "cn.campus.platform.RulesTest",
+      "tests": 9,
+      "passed": true,
+      "timestamp": null
+    }
+  ],
+  "tests": 25,
+  "passed": true
+}

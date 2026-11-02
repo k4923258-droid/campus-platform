@@ -1,5 +1,5 @@
 import Papa from 'papaparse'
-export async function readTable(file: File): Promise<Record<string, any>[]> {
+export async function readTable(file: File): Promise<Record<string, string>[]> {
   if (file.size > 5 * 1024 * 1024) throw new Error('目录文件不能超过5MB')
   if (file.name.toLowerCase().endsWith('.csv')) {
     const parsed = Papa.parse<Record<string, string>>(await file.text(), {
@@ -19,10 +19,10 @@ export async function readTable(file: File): Promise<Record<string, any>[]> {
   if (sheet.rowCount > 5001) throw new Error('每次最多导入5000行')
   const headers: string[] = []
   sheet.getRow(1).eachCell((cell, col) => (headers[col] = cell.text.trim()))
-  const records: Record<string, any>[] = []
+  const records: Record<string, string>[] = []
   sheet.eachRow((row, index) => {
     if (index === 1) return
-    const record: Record<string, any> = Object.create(null)
+    const record: Record<string, string> = Object.create(null)
     row.eachCell((cell, col) => {
       const header = headers[col]
       if (header && !['__proto__', 'constructor', 'prototype'].includes(header))

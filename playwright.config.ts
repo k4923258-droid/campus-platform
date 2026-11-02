@@ -6,7 +6,10 @@ export default defineConfig({
   timeout: 45000,
   fullyParallel: false,
   workers: 1,
-  reporter: [['list'], ['json', { outputFile: 'artifacts/playwright-results.json' }]],
+  reporter: [
+    ['list'],
+    ['json', { outputFile: process.env.CAMPUS_REPORT_FILE || 'artifacts/playwright-results.json' }],
+  ],
   use: { baseURL: 'http://127.0.0.1:5173', headless: true, trace: 'retain-on-failure' },
   projects: [
     { name: 'chrome', use: { ...devices['Desktop Chrome'], channel: 'chrome' } },

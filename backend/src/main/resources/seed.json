@@ -9,7 +9,13 @@
       "roles": [
         "student"
       ],
-      "orgIds": []
+      "orgIds": [],
+      "accountStatus": "active",
+      "bindingStatus": "bound",
+      "identitySource": "demo",
+      "emailVerifiedAt": "2026-10-28T00:00:00Z",
+      "email": "20260001@stu.neu.edu.cn",
+      "sessionVersion": 0
     },
     {
       "id": "member",
@@ -19,7 +25,13 @@
       "roles": [
         "student"
       ],
-      "orgIds": []
+      "orgIds": [],
+      "accountStatus": "active",
+      "bindingStatus": "bound",
+      "identitySource": "demo",
+      "emailVerifiedAt": "2026-10-28T00:00:00Z",
+      "email": "20260002@stu.neu.edu.cn",
+      "sessionVersion": 0
     },
     {
       "id": "member2",
@@ -29,7 +41,13 @@
       "roles": [
         "student"
       ],
-      "orgIds": []
+      "orgIds": [],
+      "accountStatus": "active",
+      "bindingStatus": "bound",
+      "identitySource": "demo",
+      "emailVerifiedAt": "2026-10-28T00:00:00Z",
+      "email": "20260003@stu.neu.edu.cn",
+      "sessionVersion": 0
     },
     {
       "id": "manager",
@@ -43,7 +61,13 @@
       "orgIds": [
         "photo",
         "innovation"
-      ]
+      ],
+      "accountStatus": "active",
+      "bindingStatus": "bound",
+      "identitySource": "demo",
+      "emailVerifiedAt": "2026-10-28T00:00:00Z",
+      "email": "20240001@stu.neu.edu.cn",
+      "sessionVersion": 0
     },
     {
       "id": "other-manager",
@@ -56,7 +80,13 @@
       ],
       "orgIds": [
         "choir"
-      ]
+      ],
+      "accountStatus": "active",
+      "bindingStatus": "bound",
+      "identitySource": "demo",
+      "emailVerifiedAt": "2026-10-28T00:00:00Z",
+      "email": "20240002@stu.neu.edu.cn",
+      "sessionVersion": 0
     },
     {
       "id": "admin",
@@ -66,7 +96,13 @@
       "roles": [
         "admin"
       ],
-      "orgIds": []
+      "orgIds": [],
+      "accountStatus": "active",
+      "bindingStatus": "bound",
+      "identitySource": "demo",
+      "emailVerifiedAt": "2026-10-28T00:00:00Z",
+      "email": "admin@stu.neu.edu.cn",
+      "sessionVersion": 0
     }
   ],
   "organizations": [
@@ -371,5 +407,6 @@
       "start": "2027-02-22",
       "end": "2027-07-18"
     }
-  ]
+  ],
+  "identityMode": "demo"
 }

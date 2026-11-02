@@ -204,6 +204,7 @@ it('A-02 团队统计按实际成员人数，待处理与结论相符', async ()
   const a = s.activities[0]!
   a.team = true
   s.applications[0]!.memberNos.push('20260002')
+  s.applications[0]!.memberUserIds!.push('member')
   expect(reviewCounts(a, s.applications, 'initial')).toMatchObject({
     total: 2,
     pending: 2,
@@ -221,8 +222,8 @@ it('A-02 团队统计按实际成员人数，待处理与结论相符', async ()
 it('A-09 负责人可见他人报名时不会被判为自己报名', async () => {
   await apply()
   const rows = snapshot(s, 'manager').applications
-  expect(isRegistered(rows, 'photo-fall', '20240001')).toBe(false)
-  expect(isRegistered(rows, 'photo-fall', '20260001')).toBe(true)
+  expect(isRegistered(rows, 'photo-fall', 'manager')).toBe(false)
+  expect(isRegistered(rows, 'photo-fall', 'student')).toBe(true)
 })
 it('A-10 满员时段不可选，但本人原预约不误判为不可用', () => {
   expect(slotFull({ id: 's', capacity: 1, booked: 1 })).toBe(true)

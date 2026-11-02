@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "校园社团与竞赛平台接口",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "description": "命令接口按业务操作命名；模拟版与Java版共用相同路径。服务端权限由业务层校验，前端按钮隐藏不构成授权。"
   },
   "servers": [
@@ -33,8 +33,11 @@
           "422": {
             "description": "业务参数校验失败"
           },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
           "503": {
-            "description": "初始化或维护中"
+            "description": "初始化、维护中或身份服务未配置"
           }
         }
       }
@@ -94,8 +97,11 @@
           "422": {
             "description": "业务参数校验失败"
           },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
           "503": {
-            "description": "初始化或维护中"
+            "description": "初始化、维护中或身份服务未配置"
           }
         }
       },
@@ -120,8 +126,40 @@
           "422": {
             "description": "业务参数校验失败"
           },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
           "503": {
-            "description": "初始化或维护中"
+            "description": "初始化、维护中或身份服务未配置"
+          }
+        }
+      },
+      "get": {
+        "summary": "查询会话及本人身份状态；无登录时me为null",
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
+          "503": {
+            "description": "初始化、维护中或身份服务未配置"
           }
         }
       }
@@ -182,8 +220,11 @@
           "422": {
             "description": "业务参数校验失败"
           },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
           "503": {
-            "description": "初始化或维护中"
+            "description": "初始化、维护中或身份服务未配置"
           }
         }
       }
@@ -220,8 +261,11 @@
           "422": {
             "description": "业务参数校验失败"
           },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
           "503": {
-            "description": "初始化或维护中"
+            "description": "初始化、维护中或身份服务未配置"
           }
         }
       }
@@ -248,8 +292,11 @@
           "422": {
             "description": "业务参数校验失败"
           },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
           "503": {
-            "description": "初始化或维护中"
+            "description": "初始化、维护中或身份服务未配置"
           }
         }
       }
@@ -266,57 +313,11 @@
     },
     "/commands/register": {
       "post": {
-        "summary": "register",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "studentNo": {
-                    "type": "string"
-                  },
-                  "name": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string",
-                    "minLength": 8,
-                    "maxLength": 128
-                  }
-                },
-                "required": [
-                  "studentNo",
-                  "name",
-                  "password"
-                ],
-                "additionalProperties": false
-              }
-            }
-          }
-        },
+        "deprecated": true,
+        "summary": "已关闭的旧注册入口，固定拒绝免验证建号",
         "responses": {
-          "200": {
-            "description": "成功；只返回当前角色与组织允许读取的数据"
-          },
-          "401": {
-            "description": "未登录或会话失效"
-          },
           "403": {
-            "description": "没有权限或CSRF验证失败"
-          },
-          "404": {
-            "description": "记录或操作不存在"
-          },
-          "409": {
-            "description": "版本、状态、唯一性或容量冲突"
-          },
-          "422": {
-            "description": "业务参数校验失败"
-          },
-          "503": {
-            "description": "初始化或维护中"
+            "description": "请通过校园邮箱核验注册"
           }
         }
       }
@@ -551,8 +552,11 @@
           "422": {
             "description": "业务参数校验失败"
           },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
           "503": {
-            "description": "初始化或维护中"
+            "description": "初始化、维护中或身份服务未配置"
           }
         }
       }
@@ -581,6 +585,14 @@
                     "additionalProperties": true
                   },
                   "memberNos": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "deprecated": true,
+                    "description": "兼容输入；服务端只解析已核验账号，不作访问授权依据"
+                  },
+                  "memberUserIds": {
                     "type": "array",
                     "items": {
                       "type": "string"
@@ -618,8 +630,11 @@
           "422": {
             "description": "业务参数校验失败"
           },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
           "503": {
-            "description": "初始化或维护中"
+            "description": "初始化、维护中或身份服务未配置"
           }
         }
       }
@@ -665,8 +680,11 @@
           "422": {
             "description": "业务参数校验失败"
           },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
           "503": {
-            "description": "初始化或维护中"
+            "description": "初始化、维护中或身份服务未配置"
           }
         }
       }
@@ -712,8 +730,11 @@
           "422": {
             "description": "业务参数校验失败"
           },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
           "503": {
-            "description": "初始化或维护中"
+            "description": "初始化、维护中或身份服务未配置"
           }
         }
       }
@@ -781,8 +802,11 @@
           "422": {
             "description": "业务参数校验失败"
           },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
           "503": {
-            "description": "初始化或维护中"
+            "description": "初始化、维护中或身份服务未配置"
           }
         }
       }
@@ -857,8 +881,11 @@
           "422": {
             "description": "业务参数校验失败"
           },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
           "503": {
-            "description": "初始化或维护中"
+            "description": "初始化、维护中或身份服务未配置"
           }
         }
       }
@@ -908,8 +935,11 @@
           "422": {
             "description": "业务参数校验失败"
           },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
           "503": {
-            "description": "初始化或维护中"
+            "description": "初始化、维护中或身份服务未配置"
           }
         }
       }
@@ -962,8 +992,11 @@
           "422": {
             "description": "业务参数校验失败"
           },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
           "503": {
-            "description": "初始化或维护中"
+            "description": "初始化、维护中或身份服务未配置"
           }
         }
       }
@@ -1013,8 +1046,11 @@
           "422": {
             "description": "业务参数校验失败"
           },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
           "503": {
-            "description": "初始化或维护中"
+            "description": "初始化、维护中或身份服务未配置"
           }
         }
       }
@@ -1067,8 +1103,11 @@
           "422": {
             "description": "业务参数校验失败"
           },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
           "503": {
-            "description": "初始化或维护中"
+            "description": "初始化、维护中或身份服务未配置"
           }
         }
       }
@@ -1114,8 +1153,11 @@
           "422": {
             "description": "业务参数校验失败"
           },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
           "503": {
-            "description": "初始化或维护中"
+            "description": "初始化、维护中或身份服务未配置"
           }
         }
       }
@@ -1165,8 +1207,11 @@
           "422": {
             "description": "业务参数校验失败"
           },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
           "503": {
-            "description": "初始化或维护中"
+            "description": "初始化、维护中或身份服务未配置"
           }
         }
       }
@@ -1219,8 +1264,11 @@
           "422": {
             "description": "业务参数校验失败"
           },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
           "503": {
-            "description": "初始化或维护中"
+            "description": "初始化、维护中或身份服务未配置"
           }
         }
       }
@@ -1289,8 +1337,11 @@
           "422": {
             "description": "业务参数校验失败"
           },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
           "503": {
-            "description": "初始化或维护中"
+            "description": "初始化、维护中或身份服务未配置"
           }
         }
       }
@@ -1340,8 +1391,11 @@
           "422": {
             "description": "业务参数校验失败"
           },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
           "503": {
-            "description": "初始化或维护中"
+            "description": "初始化、维护中或身份服务未配置"
           }
         }
       }
@@ -1387,8 +1441,11 @@
           "422": {
             "description": "业务参数校验失败"
           },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
           "503": {
-            "description": "初始化或维护中"
+            "description": "初始化、维护中或身份服务未配置"
           }
         }
       }
@@ -1438,8 +1495,11 @@
           "422": {
             "description": "业务参数校验失败"
           },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
           "503": {
-            "description": "初始化或维护中"
+            "description": "初始化、维护中或身份服务未配置"
           }
         }
       }
@@ -1496,8 +1556,11 @@
           "422": {
             "description": "业务参数校验失败"
           },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
           "503": {
-            "description": "初始化或维护中"
+            "description": "初始化、维护中或身份服务未配置"
           }
         }
       }
@@ -1543,10 +1606,595 @@
           "422": {
             "description": "业务参数校验失败"
           },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
           "503": {
-            "description": "初始化或维护中"
+            "description": "初始化、维护中或身份服务未配置"
           }
         }
+      }
+    },
+    "/auth/providers": {
+      "get": {
+        "summary": "可用认证方式、身份环境与邮箱域名；学校认证当前不可用",
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
+          "503": {
+            "description": "初始化、维护中或身份服务未配置"
+          }
+        }
+      }
+    },
+    "/auth/email/challenges": {
+      "post": {
+        "summary": "申请验证码：6位、5分钟、最多失败5次、重发60秒；不返回验证码",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "purpose": {
+                    "enum": [
+                      "register",
+                      "password-reset",
+                      "bind",
+                      "email-change"
+                    ]
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "email",
+                  "purpose"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
+          "503": {
+            "description": "初始化、维护中或身份服务未配置"
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "summary": "核验校邮及可信映射后注册普通账号；待映射/冲突不激活",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "challengeId": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string",
+                    "pattern": "^[0-9]{6}$"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 128
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "challengeId",
+                  "code",
+                  "password",
+                  "name"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
+          "503": {
+            "description": "初始化、维护中或身份服务未配置"
+          }
+        }
+      }
+    },
+    "/auth/password/reset": {
+      "post": {
+        "summary": "恢复密码并撤销全部既有会话",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "challengeId": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string",
+                    "pattern": "^[0-9]{6}$"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 128
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "challengeId",
+                  "code",
+                  "password"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
+          "503": {
+            "description": "初始化、维护中或身份服务未配置"
+          }
+        }
+      }
+    },
+    "/auth/identity/bind": {
+      "post": {
+        "summary": "已登录旧账号补核验，需当前密码，不自动授予历史管理权限",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "challengeId": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string",
+                    "pattern": "^[0-9]{6}$"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 128
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "challengeId",
+                  "code",
+                  "password"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
+          "503": {
+            "description": "初始化、维护中或身份服务未配置"
+          }
+        }
+      }
+    },
+    "/auth/email/change": {
+      "post": {
+        "summary": "当前密码、新邮箱核验及原邮箱安全通知",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "challengeId": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string",
+                    "pattern": "^[0-9]{6}$"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 128
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "challengeId",
+                  "code",
+                  "password"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
+          "503": {
+            "description": "初始化、维护中或身份服务未配置"
+          }
+        }
+      }
+    },
+    "/auth/login/neu": {
+      "get": {
+        "summary": "学校统一认证预留，当前返回503且不建立学校认证会话",
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
+          "503": {
+            "description": "初始化、维护中或身份服务未配置"
+          }
+        }
+      }
+    },
+    "/auth/callback/neu": {
+      "get": {
+        "summary": "学校统一认证预留，当前返回503且不建立学校认证会话",
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
+          "503": {
+            "description": "初始化、维护中或身份服务未配置"
+          }
+        }
+      }
+    },
+    "/activities/{activityId}/team-members/resolve": {
+      "post": {
+        "summary": "按完整学号解析可加入的已核验用户，只返回必要字段",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "studentNo": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "studentNo"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
+          "503": {
+            "description": "初始化、维护中或身份服务未配置"
+          }
+        },
+        "parameters": [
+          {
+            "name": "activityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/auth/identity-conflicts": {
+      "get": {
+        "summary": "管理员查看身份冲突申请",
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
+          "503": {
+            "description": "初始化、维护中或身份服务未配置"
+          }
+        }
+      }
+    },
+    "/auth/identity-conflicts/{id}/resolve": {
+      "post": {
+        "summary": "管理员依据凭据处理身份冲突，明确报名迁移范围，原管理权限不转移",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "minLength": 10
+                  },
+                  "transferApplicationIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "reason"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功；只返回当前角色与组织允许读取的数据"
+          },
+          "401": {
+            "description": "未登录或会话失效"
+          },
+          "403": {
+            "description": "没有权限或CSRF验证失败"
+          },
+          "404": {
+            "description": "记录或操作不存在"
+          },
+          "409": {
+            "description": "版本、状态、唯一性或容量冲突"
+          },
+          "422": {
+            "description": "业务参数校验失败"
+          },
+          "429": {
+            "description": "限流或验证码重发间隔未满足"
+          },
+          "503": {
+            "description": "初始化、维护中或身份服务未配置"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
       }
     }
   },

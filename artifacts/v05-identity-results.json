@@ -1,0 +1,118 @@
+{
+  "at": "2026-11-02T05:11:06.338Z",
+  "mode": "local-mail",
+  "database": "campus_v05_local",
+  "conditions": "MySQL8.4; real Java API; local SMTP/Mailpit; expiration/resend use isolated database time fixtures; no real school mailbox or SSO",
+  "cases": [
+    {
+      "name": "TC-ID-015 学校认证未配置，发起与回调均不可用",
+      "passed": true,
+      "ms": 19
+    },
+    {
+      "name": "TC-ID-001 精确邮箱域名白名单",
+      "passed": true,
+      "ms": 47
+    },
+    {
+      "name": "TC-ID-002/003/011 SMTP收件、可信学号及普通用户权限",
+      "passed": true,
+      "ms": 727
+    },
+    {
+      "name": "TC-ID-005 验证码一次性，不接受重放",
+      "passed": true,
+      "ms": 14
+    },
+    {
+      "name": "TC-ID-006 重发60秒限制及重发后旧申请失效",
+      "passed": true,
+      "ms": 521
+    },
+    {
+      "name": "TC-ID-005 过期验证码被拒绝（隔离库时间夹具）",
+      "passed": true,
+      "ms": 133
+    },
+    {
+      "name": "TC-ID-006 校验失败次数真实落库且第五次后锁定",
+      "passed": true,
+      "ms": 180
+    },
+    {
+      "name": "TC-ID-004 映射未确认账号只允许公开浏览",
+      "passed": true,
+      "ms": 449
+    },
+    {
+      "name": "TC-ID-007 同一申请并发注册只形成一个身份",
+      "passed": true,
+      "ms": 224
+    },
+    {
+      "name": "REQ-F-102 旧注册命令拒绝免验证建号",
+      "passed": true,
+      "ms": 29
+    },
+    {
+      "name": "TC-ID-009 未注册成员拒绝，成员解析仅返回必要字段",
+      "passed": true,
+      "ms": 17
+    },
+    {
+      "name": "REQ-F-028/031 团队按用户ID建立、全员通知",
+      "passed": true,
+      "ms": 43
+    },
+    {
+      "name": "TC-ID-010 无关联用户不能查看团队、读取附件或退出",
+      "passed": true,
+      "ms": 387
+    },
+    {
+      "name": "REQ-F-033 队员退出释放占用，低于下限暂停流转",
+      "passed": true,
+      "ms": 80
+    },
+    {
+      "name": "REQ-N-040 MySQL并发成员占用仅一队成功",
+      "passed": true,
+      "ms": 284
+    },
+    {
+      "name": "UC-02/03/04/05 发布→报名→草稿→确认→抢时段→录取更正",
+      "passed": true,
+      "ms": 8478
+    },
+    {
+      "name": "TC-ID-008 管理员核验冲突，不继承原管理权限或团队",
+      "passed": true,
+      "ms": 637
+    },
+    {
+      "name": "TC-ID-012 密码恢复撤销两个既有会话，旧密码与验证码失效",
+      "passed": true,
+      "ms": 755
+    },
+    {
+      "name": "TC-ID-013 换绑须当前密码、校验新邮箱与原学号对应",
+      "passed": true,
+      "ms": 362
+    },
+    {
+      "name": "TC-ID-013 既有邮箱换绑成功，原邮箱收到安全通知，旧会话失效",
+      "passed": true,
+      "ms": 588
+    },
+    {
+      "name": "REQ-F-103/104 待映射用户补充可信绑定，不继承管理权限",
+      "passed": true,
+      "ms": 514
+    },
+    {
+      "name": "TC-ID-014 登录防刷返回429、明确重试时间及Retry-After",
+      "passed": true,
+      "ms": 1870
+    }
+  ]
+}

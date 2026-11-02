@@ -1,4 +1,5 @@
 <script setup lang="ts">
+defineOptions({ name: 'ManagerWorkspace' })
 import { reviewCounts } from '@/domain/history'
 import { downloadRedacted } from '@/domain/redact'
 import { computed, ref } from 'vue'
@@ -37,7 +38,7 @@ const score = ref(60)
 const passed = ref(true)
 const note = ref('')
 const slotOpen = ref(false)
-const slot = ref<any>({})
+const slot = ref<Partial<Slot> & { reason?: string }>({})
 const admitted = ref<string[]>([])
 const activities = computed(() =>
   s.data!.activities.filter((a) => s.admin || s.me?.orgIds.includes(a.orgId)),
@@ -51,7 +52,7 @@ const filtered = computed(() =>
 )
 const slots = computed(() => s.data!.slots.filter((v) => v.activityId === a.value?.id))
 const stage = computed(() => a.value?.stages[review.value?.stageIndex || 0])
-async function act(action: string, p: any) {
+async function act(action: string, p: unknown) {
   try {
     await s.act(action, p)
     ElMessage.success('操作成功')

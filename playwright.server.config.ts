@@ -5,8 +5,18 @@ export default defineConfig({
   testMatch: 'server-ui.spec.ts',
   timeout: 60000,
   workers: 1,
-  reporter: [['list'], ['json', { outputFile: 'artifacts/server-browser-results.json' }]],
-  use: { baseURL: 'http://127.0.0.1:8080', headless: true, trace: 'retain-on-failure' },
+  reporter: [
+    ['list'],
+    [
+      'json',
+      { outputFile: process.env.CAMPUS_REPORT_FILE || 'artifacts/server-browser-results.json' },
+    ],
+  ],
+  use: {
+    baseURL: process.env.CAMPUS_TEST_BASE_URL || 'http://127.0.0.1:8080',
+    headless: true,
+    trace: 'retain-on-failure',
+  },
   projects: [
     { name: 'server-chrome', use: { ...devices['Desktop Chrome'], channel: 'chrome' } },
     { name: 'server-edge', use: { ...devices['Desktop Edge'], channel: 'msedge' } },

@@ -20,7 +20,7 @@ const html = computed(() =>
   DOMPurify.sanitize(new MarkdownIt({ html: false, linkify: true }).render(a.value?.body || '')),
 )
 const registered = computed(() =>
-  isRegistered(s.data?.applications || [], a.value?.id || '', s.me?.studentNo),
+  isRegistered(s.data?.applications || [], a.value?.id || '', s.me?.id),
 )
 watch(
   () => a.value?.poster,

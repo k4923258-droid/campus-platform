@@ -1,0 +1,49 @@
+{
+  "stats": {
+    "startTime": "2026-11-02T05:10:48.771Z",
+    "duration": 38591.447,
+    "expected": 6,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "cases": [
+    {
+      "name": "同源打包版 / 登录、负责人发布、学生报名与数据库持久化",
+      "project": "server-chrome",
+      "passed": true,
+      "ms": 6669
+    },
+    {
+      "name": "UC-07/14 校邮注册、真实SMTP验证码与登录，375像素也可操作",
+      "project": "server-chrome",
+      "passed": true,
+      "ms": 3613
+    },
+    {
+      "name": "同源打包版 / 登录、负责人发布、学生报名与数据库持久化",
+      "project": "server-edge",
+      "passed": true,
+      "ms": 7734
+    },
+    {
+      "name": "UC-07/14 校邮注册、真实SMTP验证码与登录，375像素也可操作",
+      "project": "server-edge",
+      "passed": true,
+      "ms": 3724
+    },
+    {
+      "name": "同源打包版 / 登录、负责人发布、学生报名与数据库持久化",
+      "project": "server-mobile375",
+      "passed": true,
+      "ms": 7226
+    },
+    {
+      "name": "UC-07/14 校邮注册、真实SMTP验证码与登录，375像素也可操作",
+      "project": "server-mobile375",
+      "passed": true,
+      "ms": 5843
+    }
+  ],
+  "note": "Full runner report retained locally; this public summary omits action arguments and absolute machine paths."
+}

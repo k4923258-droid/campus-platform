@@ -54,11 +54,11 @@ public class Rules {
   }
 
   public static boolean admin(JsonNode u) {
-    return u != null && contains(u.path("roles"), "admin");
+    return Identity.available(u) && contains(u.path("roles"), "admin");
   }
 
   public static boolean manages(JsonNode u, JsonNode a) {
-    return admin(u) || (u != null && contains(u.path("orgIds"), text(a, "orgId")));
+    return admin(u) || (Identity.available(u) && contains(u.path("orgIds"), text(a, "orgId")));
   }
 
   public static Instant instant(String t) {
@@ -140,7 +140,7 @@ public class Rules {
   static List<ObjectNode> members(JsonNode s, JsonNode r) {
     return list(s, "users")
       .stream()
-      .filter(u -> contains(r.path("memberNos"), text(u, "studentNo")))
+      .filter(u -> contains(r.path("memberUserIds"), text(u, "id")))
       .toList();
   }
 
@@ -198,6 +198,13 @@ public class Rules {
   }
 
   static void advance(ObjectNode s, ObjectNode a, ObjectNode r) {
+    if (
+      members(s, r).size() != r.path("memberNos").size() ||
+      !members(s, r).stream().allMatch(Identity::verified)
+    ) {
+      r.put("status", "waiting");
+      return;
+    }
     if (flag(a, "team") && r.path("memberNos").size() < num(a, "minTeam")) {
       r.put("status", "waiting");
       return;
@@ -285,7 +292,7 @@ public class Rules {
           (u != null &&
             applications(s, a)
               .stream()
-              .anyMatch(r -> contains(r.path("memberNos"), text(u, "studentNo")))) ||
+              .anyMatch(r -> Identity.linked(r, u))) ||
           (flag(a, "published") && !flag(a, "removed") && !flag(a, "archived"))
       )
       .toList();
@@ -299,7 +306,7 @@ public class Rules {
       .filter(
         r ->
           manages(u, find(s, "activities", text(r, "activityId"))) ||
-          (u != null && contains(r.path("memberNos"), text(u, "studentNo")))
+          (u != null && Identity.linked(r, u))
       )
       .toList();
     out.set("applications", JSON.valueToTree(rows));
@@ -318,14 +325,12 @@ public class Rules {
     for (var r : rows) members(s, r).forEach(v -> ids.add(text(v, "id")));
     for (var v : list(s, "users"))
       if (admin(u) || ids.contains(text(v, "id"))) {
-        var copy = v.deepCopy();
-        copy.remove("passwordHash");
+        var copy = Identity.publicUser(v, false);
         users.add(copy);
       }
     out.set("users", users);
     if (u != null) {
-      var me = u.deepCopy();
-      me.remove("passwordHash");
+      var me = Identity.publicUser(u, true);
       out.set("me", me);
     }
     out.set(
@@ -333,7 +338,7 @@ public class Rules {
       JSON.valueToTree(
         list(s, "grants")
           .stream()
-          .filter(g -> admin(u) || text(g, "userId").equals(userId))
+          .filter(g -> admin(u) || (Identity.available(u) && text(g, "userId").equals(userId)))
           .toList()
       )
     );
@@ -342,7 +347,7 @@ public class Rules {
       JSON.valueToTree(
         list(s, "notices")
           .stream()
-          .filter(n -> text(n, "userId").equals(userId))
+          .filter(n -> Identity.available(u) && text(n, "userId").equals(userId))
           .toList()
       )
     );
@@ -391,7 +396,11 @@ public class Rules {
       JSON.valueToTree(
         list(s, "attachments")
           .stream()
-          .filter(f -> text(f, "ownerId").equals(userId) || files.contains(text(f, "id")))
+          .filter(
+            f ->
+              (Identity.available(u) && text(f, "ownerId").equals(userId)) ||
+              files.contains(text(f, "id"))
+          )
           .map(f -> {
             var v = f.deepCopy();
             v.remove("data");
@@ -440,6 +449,7 @@ public class Rules {
     tick(s);
     var u = find(s, "users", userId == null ? "" : userId);
     check(u != null, 401, "请先登录");
+    check(Identity.available(u), 403, "账号尚未完成身份核验或已停用");
     var before = s.deepCopy();
     String activityId = null;
     switch (action) {
@@ -563,12 +573,30 @@ public class Rules {
           check(!text(old, "status").equals("withdrawn"), 409, "请重新报名");
           check(num(old, "version") == num(p, "version"), 409, "报名已更新，请刷新");
         }
-        List<String> nos = new ArrayList<>();
-        nos.add(text(u, "studentNo"));
-        if (flag(a, "team")) for (var n : p.path("memberNos")) {
-          var no = n.asText().trim();
-          if (!no.isEmpty() && !no.equals(text(u, "studentNo"))) nos.add(no);
+        check(Identity.verified(u), 403, "请先完成校园邮箱及学号核验");
+        List<ObjectNode> selected = new ArrayList<>();
+        selected.add(u);
+        var values = p.has("memberUserIds") ? p.path("memberUserIds") : p.path("memberNos");
+        check(values.isMissingNode() || values.isArray(), "成员格式错误");
+        if (flag(a, "team")) for (var value : values) {
+          var v = value.asText().trim();
+          if (v.equals(text(u, "id")) || v.equals(text(u, "studentNo"))) continue;
+          var member = list(s, "users")
+            .stream()
+            .filter(m -> text(m, p.has("memberUserIds") ? "id" : "studentNo").equals(v))
+            .findFirst()
+            .orElse(null);
+          check(Identity.compatible(u, member), "队员须已注册、完成核验且账号可用");
+          selected.add(member);
         }
+        List<String> nos = selected
+          .stream()
+          .map(m -> text(m, "studentNo"))
+          .toList();
+        List<String> memberIds = selected
+          .stream()
+          .map(m -> text(m, "id"))
+          .toList();
         check(
           new HashSet<>(nos).size() == nos.size() &&
             nos.stream().allMatch(n -> n.matches("\\d{6,20}")),
@@ -619,6 +647,7 @@ public class Rules {
           .put("createdAt", old == null ? stamp(s) : text(old, "createdAt"))
           .put("updatedAt", stamp(s));
         r.set("memberNos", JSON.valueToTree(nos));
+        r.set("memberUserIds", JSON.valueToTree(memberIds));
         r.set("answers", p.path("answers").deepCopy());
         r.set("reviews", arr());
         r.set("history", old == null ? arr() : old.path("history").deepCopy());
@@ -643,8 +672,7 @@ public class Rules {
           appNotice(s, r, text(a, "title") + "：报名已撤回。");
         } else {
           check(
-            !text(r, "captainId").equals(userId) &&
-              contains(r.path("memberNos"), text(u, "studentNo")),
+            !text(r, "captainId").equals(userId) && Identity.linked(r, u),
             403,
             "仅非队长成员可退出"
           );
@@ -653,6 +681,11 @@ public class Rules {
             if (!n.asText().equals(text(u, "studentNo"))) nos.add(n);
           });
           r.set("memberNos", nos);
+          var remaining = arr();
+          r.path("memberUserIds").forEach(v -> {
+            if (!v.asText().equals(userId)) remaining.add(v);
+          });
+          r.set("memberUserIds", remaining);
           notice(s, userId, "已退出团队", text(a, "id"));
           appNotice(s, r, "队员已退出，请队长补齐人数。");
           r.put("version", num(r, "version") + 1)
@@ -671,6 +704,12 @@ public class Rules {
         manage(u, a);
         writable(a);
         check(num(p, "version") == num(r, "version"), 409, "报名已更新，请刷新");
+        check(
+          members(s, r).size() == r.path("memberNos").size() &&
+            members(s, r).stream().allMatch(Identity::verified),
+          409,
+          "团队成员身份异常"
+        );
         check(
           !flag(a, "team") || r.path("memberNos").size() >= num(a, "minTeam"),
           409,
@@ -765,6 +804,12 @@ public class Rules {
         writable(a);
         check(text(r, "status").equals("interview"), 409, "仅面试中的报名可预约");
         check(
+          members(s, r).size() == r.path("memberNos").size() &&
+            members(s, r).stream().allMatch(Identity::verified),
+          409,
+          "团队成员身份异常"
+        );
+        check(
           !flag(a, "team") || r.path("memberNos").size() >= num(a, "minTeam"),
           409,
           "团队人数不足"
@@ -824,7 +869,14 @@ public class Rules {
             .filter(r -> !List.of("withdrawn", "rejected").contains(text(r, "status")))
             .toList();
           check(
-            rows.stream().allMatch(r -> text(r, "status").equals("eligible")),
+            rows
+              .stream()
+              .allMatch(
+                r ->
+                  text(r, "status").equals("eligible") &&
+                  members(s, r).size() == r.path("memberNos").size() &&
+                  members(s, r).stream().allMatch(Identity::verified)
+              ),
             409,
             "仍有未完成审核"
           );

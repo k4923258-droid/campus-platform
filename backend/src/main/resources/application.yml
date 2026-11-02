@@ -10,6 +10,18 @@ server:
   tomcat:
     max-swallow-size: 30MB
 spring:
+  mail:
+    host: ${CAMPUS_SMTP_HOST:127.0.0.1}
+    port: ${CAMPUS_SMTP_PORT:1025}
+    username: ${CAMPUS_SMTP_USER:}
+    password: ${CAMPUS_SMTP_PASSWORD:}
+    properties:
+      mail.smtp.connectiontimeout: 3000
+      mail.smtp.timeout: 3000
+      mail.smtp.writetimeout: 3000
+      mail.smtp.starttls.enable: ${CAMPUS_SMTP_TLS:false}
+      mail.smtp.starttls.required: ${CAMPUS_SMTP_TLS:false}
+      mail.smtp.ssl.enable: ${CAMPUS_SMTP_SSL:false}
   datasource:
     url: ${CAMPUS_DB_URL:jdbc:mysql://127.0.0.1:3307/campus?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai}
     username: ${CAMPUS_DB_USER:campus}
@@ -26,6 +38,11 @@ spring:
     deserialization:
       fail-on-unknown-properties: true
 campus:
+  identity-mode: ${CAMPUS_IDENTITY_MODE:formal}
+  mail-enabled: ${CAMPUS_MAIL_ENABLED:false}
+  mail-from: ${CAMPUS_MAIL_FROM:campus@localhost}
+  otp-secret: ${CAMPUS_OTP_SECRET:}
+  bootstrap-admin-password: ${CAMPUS_BOOTSTRAP_ADMIN_PASSWORD:}
   files: ${CAMPUS_FILES:./data/files}
   maintenance: ${CAMPUS_MAINTENANCE:false}
   demo: ${CAMPUS_DEMO:false}

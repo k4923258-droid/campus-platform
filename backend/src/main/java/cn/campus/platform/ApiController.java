@@ -25,12 +25,14 @@ public class ApiController implements ApplicationRunner {
   );
   private static final String LOG_SALT = UUID.randomUUID().toString();
   private final PlatformService service;
+  private final AuthService auth;
 
   @Value("${campus.maintenance:false}")
   boolean maintenance;
 
-  public ApiController(PlatformService service) {
+  public ApiController(PlatformService service, AuthService auth) {
     this.service = service;
+    this.auth = auth;
   }
 
   @Override
@@ -44,8 +46,7 @@ public class ApiController implements ApplicationRunner {
   }
 
   private String user(HttpServletRequest request) {
-    var session = request.getSession(false);
-    return session == null ? null : (String) session.getAttribute("userId");
+    return auth.sessionUser(request);
   }
 
   private void ready() {
@@ -71,16 +72,27 @@ public class ApiController implements ApplicationRunner {
   @PostMapping("/session")
   public ObjectNode login(@RequestBody ObjectNode p, HttpServletRequest request) {
     ready();
+    auth.loginLimit(request.getRemoteAddr(), text(p, "studentNo"));
     var u = service.userByNo(text(p, "studentNo"));
-    if (u == null || !service.passwordMatches(text(p, "password"), text(u, "passwordHash"))) {
+    boolean matches = service.passwordMatches(
+      text(p, "password"),
+      u == null ? Passwords.dummyHash() : text(u, "passwordHash")
+    );
+    if (u == null || !matches) {
       service.event(null, "登录失败");
       throw new ApiError(401, "学号或密码错误");
     }
+    check(
+      service.accepts(u) && !text(u, "accountStatus").equals("disabled"),
+      403,
+      "账号不可用或身份环境不匹配"
+    );
     var old = request.getSession(false);
     if (old != null) old.invalidate();
     var session = request.getSession(true);
     session.setMaxInactiveInterval(1800);
     session.setAttribute("userId", text(u, "id"));
+    session.setAttribute("securityVersion", num(u, "sessionVersion"));
     service.event(text(u, "id"), "登录");
     return obj().put("ok", true);
   }
@@ -139,9 +151,7 @@ public class ApiController implements ApplicationRunner {
   public ResponseEntity<?> domain(ApiError error, HttpServletRequest request) {
     String requestId = UUID.randomUUID().toString();
     if (error.status == 403) service.event(user(request), "拒绝越权访问");
-    return ResponseEntity.status(error.status).body(
-      Map.of("message", error.getMessage(), "requestId", requestId)
-    );
+    return AuthErrors.response(error, requestId);
   }
 
   @ExceptionHandler({

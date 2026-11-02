@@ -39,13 +39,37 @@ public class PlatformService {
   private final EntityManager em;
   private final LockRepository locks;
   private volatile ObjectNode cached;
-  private final BCryptPasswordEncoder passwords = new BCryptPasswordEncoder(10);
 
   @Value("${campus.files}")
   String files;
 
   @Value("${campus.demo:false}")
   boolean demo;
+
+  @Value("${campus.identity-mode:formal}")
+  String identityMode;
+
+  @Value("${campus.bootstrap-admin-password:}")
+  String bootstrapPassword;
+
+  public String mode() {
+    return demo ? "demo" : identityMode;
+  }
+
+  public boolean accepts(ObjectNode u) {
+    if (u == null) return false;
+    var source = text(u, "identitySource");
+    return mode().equals("demo")
+      ? source.equals("demo")
+      : mode().equals("local-mail")
+        ? source.equals("local-mail")
+        : java.util.List.of("campus-email", "school", "bootstrap", "legacy").contains(source);
+  }
+
+  @Transactional
+  public ObjectNode identityMutation(Function<ObjectNode, ObjectNode> operation) {
+    return transaction(operation);
+  }
 
   public PlatformService(EntityManager em, LockRepository locks) {
     this.em = em;
@@ -57,12 +81,53 @@ public class PlatformService {
     Files.createDirectories(Path.of(files));
     locks.acquire();
     var s = load();
-    if (list(s, "users").isEmpty()) {
-      check(demo, 503, "数据库为空。请先用 CAMPUS_DEMO=true 初始化课程演示账号。");
+    boolean fresh = list(s, "users").isEmpty();
+    if (fresh) {
       s = (ObjectNode) JSON.readTree(new ClassPathResource("seed.json").getInputStream());
       s.remove("now");
-      for (var u : list(s, "users")) u.put("passwordHash", passwords.encode("Demo123!"));
+      s.put("identityMode", mode());
+      if (mode().equals("formal")) {
+        for (String key : TABLES.keySet()) s.set(key, arr());
+        if (!bootstrapPassword.isEmpty()) {
+          var admin = obj()
+            .put("id", id())
+            .put("studentNo", "admin")
+            .put("name", "平台管理员")
+            .put("passwordHash", Passwords.encode(bootstrapPassword))
+            .put("identitySource", "bootstrap")
+            .put("accountStatus", "active")
+            .put("bindingStatus", "unbound")
+            .put("sessionVersion", 0);
+          admin.set("roles", arr().add("admin"));
+          admin.set("orgIds", arr());
+          add(s, "users", admin);
+        }
+      }
     }
+    for (var u : list(s, "users")) {
+      if (mode().equals("demo") || (fresh && mode().equals("local-mail"))) {
+        if (!u.has("identitySource") || fresh) u.put("identitySource", mode());
+        if (!u.has("accountStatus")) u.put("accountStatus", "active");
+        if (!u.has("bindingStatus")) u.put("bindingStatus", "bound");
+        if (!u.has("emailVerifiedAt")) u.put("emailVerifiedAt", java.time.Instant.now().toString());
+        if (!u.has("email")) u.put("email", text(u, "studentNo") + "@stu.neu.edu.cn");
+        if (fresh) u.put("passwordHash", Passwords.encode("Demo123!"));
+      } else if (!u.has("identitySource")) {
+        u.put("identitySource", "legacy")
+          .put("accountStatus", "pending")
+          .put("bindingStatus", "unbound");
+      }
+      check(accepts(u), 503, "身份环境与数据库不匹配，请使用独立数据库和文件目录");
+    }
+    if (!mode().equals("formal")) for (var r : list(s, "applications"))
+      if (!r.has("memberUserIds")) {
+        var ids = arr();
+        list(s, "users")
+          .stream()
+          .filter(u -> contains(r.path("memberNos"), text(u, "studentNo")) && Identity.verified(u))
+          .forEach(u -> ids.add(text(u, "id")));
+        r.set("memberUserIds", ids);
+      }
     reconcile(s);
     tick(s);
     save(s);
@@ -79,15 +144,20 @@ public class PlatformService {
   }
 
   public ObjectNode userByNo(String studentNo) {
+    if (studentNo.isBlank()) return null;
     return list(state(), "users")
       .stream()
-      .filter(u -> text(u, "studentNo").equals(studentNo))
+      .filter(
+        u ->
+          !text(u, "accountStatus").equals("disabled") &&
+          (text(u, "studentNo").equals(studentNo) || text(u, "email").equals(studentNo))
+      )
       .findFirst()
       .orElse(null);
   }
 
   public boolean passwordMatches(String raw, String encoded) {
-    return passwords.matches(raw, encoded);
+    return Passwords.matches(raw, encoded);
   }
 
   @Transactional
@@ -95,38 +165,8 @@ public class PlatformService {
     return transaction(s -> execute(s, userId, action, p));
   }
 
-  @Transactional
   public ObjectNode register(ObjectNode p) {
-    return transaction(s -> {
-      String no = text(p, "studentNo"),
-        name = text(p, "name"),
-        password = text(p, "password");
-      check(
-        no.matches("\\d{6,20}") &&
-          !name.isBlank() &&
-          name.length() <= 60 &&
-          password.length() >= 8 &&
-          password.length() <= 128,
-        "姓名、学号或密码不符合要求"
-      );
-      check(
-        list(s, "users")
-          .stream()
-          .noneMatch(u -> text(u, "studentNo").equals(no)),
-        409,
-        "学号已注册"
-      );
-      var u = obj()
-        .put("id", id())
-        .put("studentNo", no)
-        .put("name", name.trim())
-        .put("passwordHash", passwords.encode(password));
-      u.set("roles", arr().add("student"));
-      u.set("orgIds", arr());
-      add(s, "users", u);
-      audit(s, text(u, "id"), "注册", null, "");
-      return obj().put("id", text(u, "id"));
-    });
+    throw new ApiError(403, "请通过校园邮箱核验注册");
   }
 
   @Transactional
@@ -151,7 +191,7 @@ public class PlatformService {
     check(admin(find(state(), "users", userId)), 403, "需要管理员权限");
     var fresh = (ObjectNode) JSON.readTree(new ClassPathResource("seed.json").getInputStream());
     fresh.remove("now");
-    for (var u : list(fresh, "users")) u.put("passwordHash", passwords.encode("Demo123!"));
+    for (var u : list(fresh, "users")) u.put("passwordHash", Passwords.encode("Demo123!"));
     transaction(s -> {
       for (String k : TABLES.keySet()) s.set(k, fresh.path(k));
       reconcile(s);
@@ -162,6 +202,7 @@ public class PlatformService {
   @Transactional
   public ObjectNode upload(String userId, ObjectNode payload) throws Exception {
     check(find(state(), "users", userId) != null, 401, "请先登录");
+    check(Identity.available(find(state(), "users", userId)), 403, "请先完成身份核验");
     String name = text(payload, "name"),
       mime = text(payload, "mime"),
       data = text(payload, "data");
@@ -263,7 +304,7 @@ public class PlatformService {
   }
 
   private ObjectNode load() {
-    var s = obj().put("schema", 1);
+    var s = obj().put("schema", 2).put("identityMode", mode());
     for (var entry : TABLES.entrySet()) {
       var values = arr();
       for (var body : em.createNativeQuery("SELECT body FROM " + entry.getValue()).getResultList())
@@ -308,16 +349,45 @@ public class PlatformService {
           .setParameter("id", removed)
           .executeUpdate();
     }
+    for (var u : list(s, "users"))
+      if (!text(u, "email").isEmpty() && !text(u, "emailVerifiedAt").isEmpty()) {
+        long count = (
+          (Number) em
+            .createNativeQuery("SELECT COUNT(*) FROM account_identity WHERE user_id=:u")
+            .setParameter("u", text(u, "id"))
+            .getSingleResult()
+        ).longValue();
+        if (count == 0) em.createNativeQuery(
+          "INSERT INTO account_identity(user_id,email,student_no) VALUES (:u,:e,:n)"
+        )
+          .setParameter("u", text(u, "id"))
+          .setParameter("e", text(u, "email"))
+          .setParameter("n", Identity.verified(u) ? text(u, "studentNo") : null)
+          .executeUpdate();
+      }
     em.createNativeQuery("DELETE FROM registration_member").executeUpdate();
     em.createNativeQuery("DELETE FROM slot_reservation").executeUpdate();
     for (var r : list(s, "applications"))
       if (!text(r, "status").equals("withdrawn")) {
         for (var n : r.path("memberNos"))
           em.createNativeQuery(
-            "INSERT INTO registration_member(activity_id,student_no,application_id) VALUES (:a,:n,:r)"
+            "INSERT INTO registration_member(activity_id,student_no,application_id,user_id) VALUES (:a,:n,:r,:u)"
           )
             .setParameter("a", text(r, "activityId"))
             .setParameter("n", n.asText())
+            .setParameter(
+              "u",
+              list(s, "users")
+                .stream()
+                .filter(
+                  u ->
+                    contains(r.path("memberUserIds"), text(u, "id")) &&
+                    text(u, "studentNo").equals(n.asText())
+                )
+                .map(u -> text(u, "id"))
+                .findFirst()
+                .orElse(null)
+            )
             .setParameter("r", text(r, "id"))
             .executeUpdate();
         if (!text(r, "slotId").isEmpty()) em.createNativeQuery(

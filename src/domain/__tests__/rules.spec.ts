@@ -1,13 +1,13 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach } from 'vitest'
 import { seed } from '../seed'
-import { execute, snapshot, tick, DomainError } from '../engine'
+import { execute, snapshot, tick } from '../engine'
 import type { State, Application } from '../types'
 let s: State
 beforeEach(async () => {
   s = await seed()
 })
-const apply = (user = 'student', extra: any = {}) =>
+const apply = (user = 'student', extra: Record<string, unknown> = {}) =>
   execute(s, user, 'application.save', {
     activityId: 'photo-fall',
     answers: { intro: '我喜欢摄影', grade: '大一' },

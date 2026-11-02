@@ -2,13 +2,38 @@
 import { ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { usePlatform } from '@/stores/platform'
-import { upload } from '@/api/client'
+import { http, upload } from '@/api/client'
 import type { Activity, Application } from '@/domain/types'
 const props = defineProps<{ activity: Activity; existing?: Application }>()
 const emit = defineEmits<{ saved: [] }>()
 const s = usePlatform()
-const answers = ref<Record<string, any>>({})
+const answers = ref<Record<string, string | number | string[] | null>>({})
 const memberText = ref('')
+const resolvedMembers = ref<{ id: string; name: string; studentNo: string }[]>([])
+watch(memberText, () => {
+  resolvedMembers.value = []
+})
+async function checkMembers() {
+  const nos = memberText.value.split(/[\s,，]+/).filter(Boolean)
+  if (new Set(nos).size !== nos.length) throw new Error('队员学号重复')
+  const result = []
+  for (const studentNo of nos)
+    result.push(
+      (await http.post(`/activities/${props.activity.id}/team-members/resolve`, { studentNo }))
+        .data,
+    )
+  resolvedMembers.value = result
+  return result
+}
+async function previewMembers() {
+  try {
+    await checkMembers()
+    ElMessage.success('队员账号已核验，提交时还会重新校验')
+  } catch (e) {
+    resolvedMembers.value = []
+    ElMessage.error((e as Error).message)
+  }
+}
 const confirmSoft = ref(false)
 const uploading = ref(false)
 watch(
@@ -38,12 +63,13 @@ async function fileChanged(fieldId: string, event: Event) {
 }
 async function submit() {
   try {
+    const members = props.activity.team ? await checkMembers() : []
     await s.act('application.save', {
       id: props.existing?.id,
       activityId: props.activity.id,
       version: props.existing?.version,
       answers: answers.value,
-      memberNos: memberText.value.split(/[\s,，]+/).filter(Boolean),
+      memberUserIds: members.map((v) => v.id),
       confirmSoft: confirmSoft.value,
     })
     ElMessage.success('报名已保存，可在“我的报名”查看进度')
@@ -66,31 +92,36 @@ async function submit() {
       ><p class="muted full">
         队长：{{ s.me?.name }} / {{ s.me?.studentNo }}。队员无需逐一确认，可自行退出团队。
       </p>
-      <el-input
-        v-model="memberText"
-        type="textarea"
-        :rows="3"
-        placeholder="例如：20260002" /></el-form-item
+      <el-input v-model="memberText" type="textarea" :rows="3" placeholder="例如：20260002" />
+      <el-button @click="previewMembers">核验队员账号</el-button>
+      <div class="full">
+        <el-tag v-for="m in resolvedMembers" :key="m.id"
+          >{{ m.name }} · {{ m.studentNo }} · 已核验</el-tag
+        >
+      </div>
+      <small class="muted"
+        >只接受已注册并完成身份核验的账号，添加后全员收到通知。</small
+      ></el-form-item
     ><el-form-item v-for="f in activity.fields" :key="f.id" :label="f.label" :required="f.required"
       ><el-input
         v-if="f.type === 'text' || f.type === 'textarea'"
-        v-model="answers[f.id]"
+        v-model="answers[f.id] as string"
         :type="f.type === 'textarea' ? 'textarea' : 'text'"
         :rows="3"
         :aria-label="f.label"
       /><el-input-number
         v-else-if="f.type === 'number'"
-        v-model="answers[f.id]"
+        v-model="answers[f.id] as number"
         :aria-label="f.label"
-      /><el-radio-group v-else-if="f.type === 'radio'" v-model="answers[f.id]"
+      /><el-radio-group v-else-if="f.type === 'radio'" v-model="answers[f.id] as string"
         ><el-radio v-for="o in f.options" :key="o" :value="o">{{ o }}</el-radio></el-radio-group
-      ><el-checkbox-group v-else-if="f.type === 'checkbox'" v-model="answers[f.id]"
+      ><el-checkbox-group v-else-if="f.type === 'checkbox'" v-model="answers[f.id] as string[]"
         ><el-checkbox v-for="o in f.options" :key="o" :value="o">{{
           o
         }}</el-checkbox></el-checkbox-group
       ><el-date-picker
         v-else-if="f.type === 'date'"
-        v-model="answers[f.id]"
+        v-model="answers[f.id] as string"
         type="date"
         value-format="YYYY-MM-DD"
         :aria-label="f.label"

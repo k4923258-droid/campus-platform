@@ -95,7 +95,12 @@ const schemas = {
       activityId: S,
       version: I,
       answers: { type: 'object', additionalProperties: true },
-      memberNos: strings,
+      memberNos: {
+        ...strings,
+        deprecated: true,
+        description: '兼容输入；服务端只解析已核验账号，不作访问授权依据',
+      },
+      memberUserIds: strings,
       confirmSoft: B,
     },
     ['activityId', 'answers'],
@@ -159,7 +164,8 @@ const response = {
   404: { description: '记录或操作不存在' },
   409: { description: '版本、状态、唯一性或容量冲突' },
   422: { description: '业务参数校验失败' },
-  503: { description: '初始化或维护中' },
+  429: { description: '限流或验证码重发间隔未满足' },
+  503: { description: '初始化、维护中或身份服务未配置' },
 }
 const paths = {
   '/snapshot': {
@@ -233,6 +239,84 @@ for (const [action, schema] of Object.entries(schemas))
       responses: response,
     },
   }
+// v0.5 identity operations share the same cookie and CSRF contract as business writes.
+const identityBody = (summary, schema) => ({
+  summary,
+  requestBody: { required: true, content: { 'application/json': { schema } } },
+  responses: response,
+})
+const credentials = object(
+  {
+    challengeId: S,
+    code: { type: 'string', pattern: '^[0-9]{6}$' },
+    email: S,
+    password: { type: 'string', minLength: 8, maxLength: 128 },
+    name: S,
+  },
+  ['challengeId', 'code', 'password'],
+)
+paths['/session'].get = { summary: '查询会话及本人身份状态；无登录时me为null', responses: response }
+paths['/auth/providers'] = {
+  get: { summary: '可用认证方式、身份环境与邮箱域名；学校认证当前不可用', responses: response },
+}
+paths['/auth/email/challenges'] = {
+  post: identityBody(
+    '申请验证码：6位、5分钟、最多失败5次、重发60秒；不返回验证码',
+    object(
+      {
+        email: S,
+        purpose: { enum: ['register', 'password-reset', 'bind', 'email-change'] },
+        password: S,
+      },
+      ['email', 'purpose'],
+    ),
+  ),
+}
+paths['/auth/register'] = {
+  post: identityBody('核验校邮及可信映射后注册普通账号；待映射/冲突不激活', {
+    ...credentials,
+    required: ['challengeId', 'code', 'password', 'name'],
+  }),
+}
+paths['/auth/password/reset'] = { post: identityBody('恢复密码并撤销全部既有会话', credentials) }
+paths['/auth/identity/bind'] = {
+  post: identityBody('已登录旧账号补核验，需当前密码，不自动授予历史管理权限', credentials),
+}
+paths['/auth/email/change'] = {
+  post: identityBody('当前密码、新邮箱核验及原邮箱安全通知', credentials),
+}
+for (const route of ['/auth/login/neu', '/auth/callback/neu'])
+  paths[route] = {
+    get: { summary: '学校统一认证预留，当前返回503且不建立学校认证会话', responses: response },
+  }
+paths['/activities/{activityId}/team-members/resolve'] = {
+  post: {
+    ...identityBody(
+      '按完整学号解析可加入的已核验用户，只返回必要字段',
+      object({ studentNo: S }, ['studentNo']),
+    ),
+    parameters: [{ name: 'activityId', in: 'path', required: true, schema: S }],
+  },
+}
+paths['/auth/identity-conflicts'] = {
+  get: { summary: '管理员查看身份冲突申请', responses: response },
+}
+paths['/auth/identity-conflicts/{id}/resolve'] = {
+  post: {
+    ...identityBody(
+      '管理员依据凭据处理身份冲突，明确报名迁移范围，原管理权限不转移',
+      object({ reason: { type: 'string', minLength: 10 }, transferApplicationIds: strings }, [
+        'reason',
+      ]),
+    ),
+    parameters: [{ name: 'id', in: 'path', required: true, schema: S }],
+  },
+}
+paths['/commands/register'].post = {
+  deprecated: true,
+  summary: '已关闭的旧注册入口，固定拒绝免验证建号',
+  responses: { 403: { description: '请通过校园邮箱核验注册' } },
+}
 fs.writeFileSync(
   path.join(root, 'docs/openapi.json'),
   JSON.stringify(
@@ -240,7 +324,7 @@ fs.writeFileSync(
       openapi: '3.1.0',
       info: {
         title: '校园社团与竞赛平台接口',
-        version: '0.4.0',
+        version: '0.5.0',
         description:
           '命令接口按业务操作命名；模拟版与Java版共用相同路径。服务端权限由业务层校验，前端按钮隐藏不构成授权。',
       },
@@ -373,19 +457,33 @@ const groups = [
     ],
   ],
 ]
+groups.push([
+  [100, 101, 102, 103, 104, 105],
+  '登录注册 / 账号核验 / 身份冲突管理',
+  'UC-07～09、UC-14',
+  '/auth/* / session',
+  [
+    '未配置学校认证返回不可用，不建立学校认证会话',
+    '校邮白名单、6位验证码、用途、过期重放和限流',
+    '可信映射与唯一约束后创建普通账号，旧入口拒绝',
+    '明确邮箱验证、学号绑定、身份来源与账号状态',
+    '冲突经管理员核验，明确迁移范围，不继承管理权限',
+    '已绑定邮箱恢复密码并撤销全部会话，换绑须重新认证',
+  ],
+])
 const rows = []
 for (const [ids, page, uc, api, scenarios] of groups)
   ids.forEach((id, i) =>
     rows.push({
       id: 'REQ-F-' + String(id).padStart(3, '0'),
-      uc,
+      uc: id <= 5 ? 'UC-10' : id === 13 ? 'UC-11' : id === 80 ? 'UC-12' : id === 81 ? 'UC-13' : uc,
       page,
       api,
       test: 'TC-F-' + String(id).padStart(3, '0'),
       scenario: scenarios[i],
     }),
   )
-if (rows.length !== 45) throw Error('需求数量错误')
+if (rows.length !== 51) throw Error('需求数量错误')
 const head = '|需求|用例|页面|接口|检查编号|预期结果|验证状态|\n|---|---|---|---|---|---|---|\n'
 const body = rows
   .map(
@@ -395,7 +493,7 @@ const body = rows
   .join('\n')
 fs.writeFileSync(
   path.join(root, 'docs/需求追踪表.md'),
-  '# v0.4 功能需求追踪\n\n共45条。页面可交互、接口已编写不等于对应条目已通过全部验收。\n\n' +
+  '# v0.5 功能需求追踪\n\n共51条。用例图编号覆盖UC-01～UC-14；实际身份、MySQL并发与浏览器结果见《v0.5实现与测试记录》。页面可交互不等于通过全部验收。\n\n' +
     head +
     body +
     '\n',
@@ -413,4 +511,4 @@ fs.writeFileSync(
     2,
   ),
 )
-console.log('已生成 OpenAPI、45条需求追踪映射及45项检查场景。')
+console.log('已生成 v0.5 OpenAPI、51条需求追踪映射；保留既有验收结果。')

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+defineOptions({ name: 'ActivityExplore' })
 import { computed, ref, watch } from 'vue'
 import {
   Search,

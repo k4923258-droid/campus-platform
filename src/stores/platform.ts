@@ -1,13 +1,16 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { http, command, mockMode } from '@/api/client'
+import { businessUser } from '@/domain/identity'
 import type { Snapshot } from '@/domain/types'
 export const usePlatform = defineStore('platform', () => {
   const data = ref<Snapshot>()
   const busy = ref(false)
   const me = computed(() => data.value?.me)
-  const admin = computed(() => !!me.value?.roles.includes('admin'))
-  const manager = computed(() => admin.value || !!me.value?.roles.includes('manager'))
+  const admin = computed(() => businessUser(me.value) && !!me.value?.roles.includes('admin'))
+  const manager = computed(
+    () => admin.value || (businessUser(me.value) && !!me.value?.roles.includes('manager')),
+  )
   const now = computed(() => new Date(data.value?.now || Date.now()))
   async function refresh() {
     data.value = (await http.get('/snapshot')).data

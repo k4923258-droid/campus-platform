@@ -1,0 +1,40 @@
+{
+  "at": "2026-11-01T15:40:07.019Z",
+  "mode": "formal",
+  "database": "campus_v05_formal",
+  "cases": [
+    {
+      "name": "正式模式不显示邮件或学校接入已就绪",
+      "passed": true
+    },
+    {
+      "name": "正式新库没有演示用户、组织、活动、报名和附件",
+      "passed": true
+    },
+    {
+      "name": "正式模式公开演示密码不能登录",
+      "passed": true
+    },
+    {
+      "name": "邮件未配置时正式验证码和注册接口明确503",
+      "passed": true
+    },
+    {
+      "name": "正式模式旧注册路径拒绝免验证创建",
+      "passed": true
+    },
+    {
+      "name": "正式模式不提供浏览器模拟收件箱",
+      "passed": true
+    },
+    {
+      "name": "SMTP本地连接失败返回503，不报告已发送",
+      "passed": true
+    },
+    {
+      "name": "SMTP失败事务回滚，不保留有效验证码申请",
+      "passed": true
+    }
+  ],
+  "smtpFailureCondition": "127.0.0.1:1026 has no SMTP listener; no real mailbox contacted"
+}

@@ -1,4 +1,5 @@
 import { defaultStages, type State } from './types'
+import { initializeDemoIdentity } from './identity'
 export async function hashPassword(value: string) {
   const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))
   return [...new Uint8Array(bytes)].map((v) => v.toString(16).padStart(2, '0')).join('')
@@ -15,7 +16,7 @@ export async function seed(): Promise<State> {
       options: ['大一', '大二', '大三', '大四'],
     },
   ]
-  return {
+  const state: State = {
     schema: 1,
     now: '2026-10-28T10:00:00+08:00',
     users: [
@@ -214,4 +215,6 @@ export async function seed(): Promise<State> {
       { id: '2027-spring', name: '2026—2027 春季学期', start: '2027-02-22', end: '2027-07-18' },
     ],
   }
+  initializeDemoIdentity(state)
+  return state
 }

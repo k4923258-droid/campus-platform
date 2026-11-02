@@ -1,9 +1,11 @@
 import { captureApplications, applicationFiles, posterHistoryFiles } from './history'
 import { activityStatus } from './types'
-import { hashPassword } from './seed'
+import { verified, businessUser, linked, publicUser, compatible } from './identity'
 import {
   stageLabels,
   type Activity,
+  type FormField,
+  type Stage,
   type Application,
   type State,
   type User,
@@ -23,11 +25,10 @@ export function ensure(ok: unknown, text: string, status = 422): asserts ok {
 const uid = () => crypto.randomUUID()
 export const clock = (s: State) => new Date(s.now || Date.now())
 const stamp = (s: State) => clock(s).toISOString()
-export const isAdmin = (u?: User) => !!u?.roles.includes('admin')
+export const isAdmin = (u?: User) => businessUser(u) && !!u?.roles.includes('admin')
 export const manages = (u: User | undefined, a: Activity) =>
-  isAdmin(u) || !!u?.orgIds.includes(a.orgId)
-const members = (s: State, r: Application) =>
-  s.users.filter((u) => r.memberNos.includes(u.studentNo))
+  isAdmin(u) || (businessUser(u) && !!u?.orgIds.includes(a.orgId))
+const members = (s: State, r: Application) => s.users.filter((u) => linked(r, u.id))
 function notify(s: State, ids: string[], text: string, activityId?: string) {
   ids.forEach((userId) =>
     s.notices.unshift({ id: uid(), userId, text, activityId, read: false, at: stamp(s) }),
@@ -45,6 +46,10 @@ function log(s: State, u: User, action: string, detail = '', activityId?: string
   s.audits.unshift({ id: uid(), actorId: u.id, action, detail, activityId, at: stamp(s) })
 }
 export function advance(s: State, a: Activity, r: Application) {
+  if (members(s, r).length !== r.memberNos.length || !members(s, r).every(verified)) {
+    r.status = 'waiting'
+    return
+  }
   if (a.team && r.memberNos.length < a.minTeam) {
     r.status = 'waiting'
     return
@@ -110,14 +115,14 @@ export function tick(s: State) {
 export function snapshot(s: State, userId?: string): Snapshot {
   const u = s.users.find((u) => u.id === userId)
   const joined = new Set(
-    s.applications.filter((r) => u && r.memberNos.includes(u.studentNo)).map((r) => r.activityId),
+    s.applications.filter((r) => verified(u) && linked(r, u?.id)).map((r) => r.activityId),
   )
   const activities = s.activities.filter(
     (a) => manages(u, a) || joined.has(a.id) || (a.published && !a.removed && !a.archived),
   )
   const applications = s.applications.filter((r) => {
     const a = s.activities.find((a) => a.id === r.activityId)!
-    return manages(u, a) || (!!u && r.memberNos.includes(u.studentNo))
+    return manages(u, a) || (!!verified(u) && linked(r, u?.id))
   })
   const relevantIds = new Set([
     u?.id,
@@ -138,11 +143,10 @@ export function snapshot(s: State, userId?: string): Snapshot {
   activities.forEach((a) => {
     if (a.poster.startsWith('file:')) readableFiles.add(a.poster.slice(5))
   })
-  const publicUser = ({ passwordHash: _password, ...rest }: User) => rest
   return {
     ...structuredClone(s),
-    users: s.users.filter((v) => relevantIds.has(v.id)).map(publicUser),
-    me: u ? publicUser(u) : undefined,
+    users: s.users.filter((v) => relevantIds.has(v.id)).map((v) => publicUser(v)),
+    me: u ? publicUser(u, true) : undefined,
     activities: structuredClone(activities).map((a) => {
       a.lifecycleStatus = activityStatus(a, clock(s), s.applications)
       if (!manages(u, a)) {
@@ -165,15 +169,15 @@ export function snapshot(s: State, userId?: string): Snapshot {
     }),
     organizations: structuredClone(s.organizations),
     slots: s.slots.filter((v) => activities.some((a) => a.id === v.activityId)),
-    grants: s.grants.filter((v) => isAdmin(u) || v.userId === u?.id),
-    notices: s.notices.filter((v) => v.userId === u?.id),
+    grants: s.grants.filter((v) => isAdmin(u) || (businessUser(u) && v.userId === u?.id)),
+    notices: s.notices.filter((v) => businessUser(u) && v.userId === u?.id),
     audits: s.audits.filter(
       (v) =>
         isAdmin(u) ||
         (v.activityId && activities.some((a) => a.id === v.activityId && manages(u, a))),
     ),
     attachments: s.attachments
-      .filter((f) => f.ownerId === u?.id || readableFiles.has(f.id))
+      .filter((f) => (businessUser(u) && f.ownerId === u?.id) || readableFiles.has(f.id))
       .map(({ data: _data, ...f }) => f),
   }
 }
@@ -218,7 +222,7 @@ function within(s: State, a: Activity) {
   ensure(a.published && !a.external && !a.resultPublished, '活动未开放报名', 409)
   ensure(clock(s) >= new Date(a.start) && clock(s) < new Date(a.end), '当前不在报名时间内', 409)
 }
-function current(s: State, p: any) {
+function current(s: State, p: { id?: string }) {
   const r = s.applications.find((v) => v.id === p.id)
   ensure(r, '报名不存在', 404)
   const a = s.activities.find((v) => v.id === r.activityId)!
@@ -234,29 +238,14 @@ export async function execute(
   s: State,
   userId: string | undefined,
   action: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Legacy JSON commands are validated by each operation below.
   p: any = {},
-): Promise<unknown> {
+): Promise<{ ok: true }> {
   tick(s)
-  if (action === 'register') {
-    ensure(
-      /^\d{6,20}$/.test(p.studentNo) && String(p.name).trim() && String(p.password).length >= 8,
-      '请填写姓名、6—20位学号及至少8位密码',
-    )
-    ensure(!s.users.some((u) => u.studentNo === p.studentNo), '该学号已注册', 409)
-    const u: User = {
-      id: uid(),
-      name: p.name.trim(),
-      studentNo: p.studentNo,
-      passwordHash: await hashPassword(p.password),
-      roles: ['student'],
-      orgIds: [],
-    }
-    s.users.push(u)
-    log(s, u, '注册')
-    return { id: u.id }
-  }
+  if (action === 'register') throw new DomainError('请通过校园邮箱核验注册', 403)
   const u = s.users.find((v) => v.id === userId)
   ensure(u, '请先登录', 401)
+  ensure(businessUser(u), '账号尚未完成身份核验或已停用', 403)
   const beforeApplications = structuredClone(s.applications)
   const beforeActivities = structuredClone(s.activities)
   let activityId: string | undefined
@@ -287,7 +276,8 @@ export async function execute(
         '团队人数范围无效',
       )
       ensure(
-        Array.isArray(p.fields) && new Set(p.fields.map((v: any) => v.id)).size === p.fields.length,
+        Array.isArray(p.fields) &&
+          new Set(p.fields.map((v: FormField) => v.id)).size === p.fields.length,
         '字段编号须唯一',
       )
       for (const f of p.fields)
@@ -301,7 +291,7 @@ export async function execute(
       ensure(
         p.stages?.length === 3 &&
           p.stages.every(
-            (v: any, i: number) =>
+            (v: Stage, i: number) =>
               v.key === ['initial', 'written', 'interview'][i] &&
               ['pass', 'score'].includes(v.mode) &&
               Number.isInteger(v.threshold) &&
@@ -323,7 +313,7 @@ export async function execute(
           'rolling',
         ])
           ensure(
-            JSON.stringify((old as any)[k]) === JSON.stringify(p[k]),
+            JSON.stringify(old[k as keyof Activity]) === JSON.stringify(p[k]),
             '已有报名，不能修改报名方式、表单或审核规则',
             409,
           )
@@ -398,14 +388,22 @@ export async function execute(
         ensure(old.status !== 'withdrawn', '请重新报名', 409)
         ensure(p.version === old.version, '报名已更新，请刷新后重试', 409)
       }
-      const memberNos = a.team
-        ? [
-            u.studentNo,
-            ...(p.memberNos || [])
-              .map((v: string) => v.trim())
-              .filter((v: string) => v && v !== u.studentNo),
-          ]
-        : [u.studentNo]
+      const selected: User[] = [u]
+      if (a.team) {
+        const values: string[] = p.memberUserIds ?? p.memberNos ?? []
+        ensure(Array.isArray(values), '成员格式错误')
+        for (const value of values) {
+          if (value === u.id || value === u.studentNo) continue
+          const member = p.memberUserIds
+            ? s.users.find((v) => v.id === value)
+            : s.users.find((v) => v.studentNo === value.trim())
+          ensure(member && compatible(u, member), '队员须已注册、完成核验且账号可用')
+          selected.push(member)
+        }
+      }
+      ensure(verified(u), '请先完成校园邮箱及学号核验', 403)
+      const memberNos = selected.map((v) => v.studentNo)
+      const memberUserIds = selected.map((v) => v.id)
       ensure(
         new Set(memberNos).size === memberNos.length &&
           memberNos.every((v: string) => /^\d{6,20}$/.test(v)),
@@ -450,6 +448,7 @@ export async function execute(
         activityId: a.id,
         captainId: u.id,
         memberNos,
+        memberUserIds,
         answers: p.answers,
         version: (old?.version || 0) + 1,
         stageIndex: 0,
@@ -479,8 +478,9 @@ export async function execute(
         r.status = 'withdrawn'
         appNotice(s, r, `${a.title}：报名已撤回。`)
       } else {
-        ensure(r.captainId !== u.id && r.memberNos.includes(u.studentNo), '仅非队长成员可退出', 403)
+        ensure(r.captainId !== u.id && linked(r, u.id), '仅非队长成员可退出', 403)
         ensure(r.status !== 'withdrawn', '报名已撤回', 409)
+        r.memberUserIds = r.memberUserIds?.filter((id) => id !== u.id)
         r.memberNos = r.memberNos.filter((n) => n !== u.studentNo)
         notify(s, [u.id], `${a.title}：你已退出团队。`, a.id)
         appNotice(s, r, `${u.name}退出团队，请队长核对人数并补齐。`)
@@ -501,6 +501,11 @@ export async function execute(
       manage(u, a)
       writable(s, a)
       ensure(p.version === r.version, '报名已更新，请刷新', 409)
+      ensure(
+        members(s, r).every(verified) && members(s, r).length === r.memberNos.length,
+        '团队成员身份异常',
+        409,
+      )
       ensure(!a.team || r.memberNos.length >= a.minTeam, '团队人数不足，补齐后才能继续', 409)
       const stage = a.stages[r.stageIndex]
       ensure(stage && r.status === stage.key, '当前没有可审核的环节', 409)
@@ -575,6 +580,11 @@ export async function execute(
       captain(u, r)
       writable(s, a)
       ensure(r.status === 'interview', '仅面试中的报名可选时段', 409)
+      ensure(
+        members(s, r).every(verified) && members(s, r).length === r.memberNos.length,
+        '团队成员身份异常',
+        409,
+      )
       ensure(!a.team || r.memberNos.length >= a.minTeam, '团队人数不足', 409)
       const slot = s.slots.find((v) => v.id === p.slotId && v.activityId === a.id && !v.cancelled)
       ensure(slot, '时段不存在或已取消', 404)
@@ -618,7 +628,12 @@ export async function execute(
           (r) => r.activityId === a.id && !['withdrawn', 'rejected'].includes(r.status),
         )
         ensure(
-          rows.every((r) => r.status === 'eligible'),
+          rows.every(
+            (r) =>
+              r.status === 'eligible' &&
+              members(s, r).length === r.memberNos.length &&
+              members(s, r).every(verified),
+          ),
           '还有未完成的审核',
           409,
         )

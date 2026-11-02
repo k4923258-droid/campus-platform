@@ -8,6 +8,12 @@ export interface User {
   passwordHash: string
   roles: Role[]
   orgIds: string[]
+  email?: string
+  emailVerifiedAt?: string
+  bindingStatus?: 'bound' | 'unbound' | 'pending' | 'conflict'
+  accountStatus?: 'active' | 'pending' | 'disabled'
+  identitySource?: 'demo' | 'local-mail' | 'campus-email' | 'school' | 'bootstrap'
+  sessionVersion?: number
 }
 export interface Organization {
   id: string
@@ -98,6 +104,7 @@ export interface Application {
   activityId: string
   captainId: string
   memberNos: string[]
+  memberUserIds?: string[]
   answers: Record<string, unknown>
   version: number
   stageIndex: number
@@ -158,6 +165,7 @@ export interface Semester {
 }
 export interface State {
   schema: number
+  identityMode?: 'demo' | 'local-mail' | 'formal'
   now?: string
   users: User[]
   organizations: Organization[]
@@ -170,7 +178,18 @@ export interface State {
   attachments: Attachment[]
   semesters: Semester[]
 }
-export type PublicUser = Omit<User, 'passwordHash'>
+export type PublicUser = Pick<
+  User,
+  | 'id'
+  | 'name'
+  | 'studentNo'
+  | 'roles'
+  | 'orgIds'
+  | 'accountStatus'
+  | 'bindingStatus'
+  | 'identitySource'
+  | 'emailVerifiedAt'
+> & { maskedEmail?: string }
 export interface Snapshot extends Omit<State, 'users' | 'attachments'> {
   users: PublicUser[]
   me?: PublicUser

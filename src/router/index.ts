@@ -5,6 +5,7 @@ export default createRouter({
   routes: [
     { path: '/', component: Explore },
     { path: '/activities/:id', component: () => import('@/pages/ActivityDetail.vue') },
+    { path: '/test-mail', component: () => import('@/pages/TestMail.vue') },
     { path: '/my', component: () => import('@/pages/MyCenter.vue') },
     { path: '/manage', component: () => import('@/pages/Manage.vue') },
     { path: '/admin', component: () => import('@/pages/Admin.vue') },

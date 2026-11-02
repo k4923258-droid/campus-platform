@@ -1,0 +1,46 @@
+{
+  "checks": [
+    {
+      "name": "前端业务及身份单元测试",
+      "passed": 59,
+      "failed": 0
+    },
+    {
+      "name": "Java业务及身份单元测试",
+      "passed": 25,
+      "failed": 0
+    },
+    {
+      "name": "真实Java、MySQL、SMTP接口检查",
+      "passed": 22,
+      "failed": 0
+    },
+    {
+      "name": "正式模式隔离与SMTP故障检查",
+      "passed": 8,
+      "failed": 0
+    },
+    {
+      "name": "模拟版Chrome／Edge／375px回归",
+      "passed": 15,
+      "failed": 0
+    },
+    {
+      "name": "真实接口Chrome／Edge／375px回归",
+      "passed": 6,
+      "failed": 0
+    }
+  ],
+  "total": 135,
+  "typecheck": true,
+  "eslint": true,
+  "oxlint": true,
+  "package": "0.5.0",
+  "jarSha256": "520c1eebde8a2d15d777e6ad0971952b699570412e855785446d8646ec3d88f8",
+  "limitations": [
+    "Local SMTP only; no real school mailbox ownership validated",
+    "School SSO disabled and reserved",
+    "New-domain student-number mapping not enabled",
+    "No new full load or backup/restore benchmark in this revision"
+  ]
+}

@@ -56,12 +56,14 @@ export function reviewCounts(a: Activity, rows: Application[], stage: string) {
     teams: relevant.length,
   }
 }
-export function isRegistered(rows: Application[], activityId: string, studentNo?: string) {
+export function isRegistered(rows: Application[], activityId: string, userId?: string) {
   return (
-    !!studentNo &&
+    !!userId &&
     rows.some(
       (r) =>
-        r.activityId === activityId && r.status !== 'withdrawn' && r.memberNos.includes(studentNo),
+        r.activityId === activityId &&
+        r.status !== 'withdrawn' &&
+        !!r.memberUserIds?.includes(userId),
     )
   )
 }

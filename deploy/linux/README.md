@@ -9,7 +9,7 @@
 需要 Java 21、Docker Compose、Nginx、Certbot、Python 3，并确保域名指向服务器，80、443 端口可访问。当前配置适用于 Ubuntu 和 systemd，执行安装需要 root。现有站点不得占用 `campus.czjyy.top`，本项目专用端口不得已被其他服务使用。
 
 1. 在开发机执行 `pwsh -File scripts/package-server.ps1`。
-2. 在服务器创建 `/opt/campus-platform/setup`，上传 `backend/target/campus-platform-0.4.0.jar`，命名为 `app.jar`，并上传本目录所有部署文件。
+2. 在服务器创建 `/opt/campus-platform/setup`，上传 `backend/target/campus-platform-0.5.0.jar`，命名为 `app.jar`，并上传本目录所有部署文件。
 3. 执行 `bash /opt/campus-platform/setup/install.sh`。
 4. 执行 `bash /opt/campus-platform/setup/enable-site.sh`。
 5. 检查 `https://campus.czjyy.top/api/v1/health` 返回 `{"status":"up"}`，再检查页面和登录。

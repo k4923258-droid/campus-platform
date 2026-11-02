@@ -4,8 +4,10 @@ import { ref, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { readTable, writeTable } from '@/api/spreadsheet'
 import { usePlatform } from '@/stores/platform'
-import { activityStatus } from '@/domain/types'
+import { activityStatus, type Organization, type Semester, type Activity } from '@/domain/types'
+defineOptions({ name: 'PlatformAdmin' })
 import { mockMode } from '@/api/client'
+import IdentityConflicts from '@/components/IdentityConflicts.vue'
 const s = usePlatform()
 const grantStatus: Record<string, string> = {
   pending: '待处理',
@@ -14,9 +16,9 @@ const grantStatus: Record<string, string> = {
 }
 const tab = ref('grants')
 const orgOpen = ref(false)
-const org = ref<any>({})
+const org = ref<Partial<Organization>>({})
 const semesterOpen = ref(false)
-const semester = ref<any>({})
+const semester = ref<Partial<Semester>>({})
 const errors = ref<string[]>([])
 const time = ref('2026-11-11T10:00:00+08:00')
 const importing = ref(false)
@@ -29,7 +31,7 @@ const totals = computed(() => ({
     s.data!.applications.filter((r) => r.status === 'admitted').length +
     s.data!.activities.reduce((sum, a) => sum + (a.summary?.admitted || 0), 0),
 }))
-async function act(action: string, p: any) {
+async function act(action: string, p: unknown) {
   try {
     await s.act(action, p)
     ElMessage.success('操作成功')
@@ -54,7 +56,7 @@ async function decide(id: string, approved: boolean) {
   }
   await act('grant.decide', { id, approved, reason })
 }
-function editOrg(value?: any) {
+function editOrg(value?: Organization) {
   org.value = value
     ? { ...value }
     : { name: '', kind: 'club', campus: '南湖', stars: 3, enabled: true }
@@ -68,7 +70,7 @@ async function remove(id: string) {
     await act('activity.remove', { activityId: id, reason: value })
   } catch {}
 }
-async function archive(a: any) {
+async function archive(a: Activity) {
   try {
     const count = s.data!.applications.filter((r) => r.activityId === a.id).length
     const { value } = await ElMessageBox.prompt(
@@ -91,7 +93,10 @@ async function importFile(event: Event) {
       try {
         await s.act('organization.save', {
           name: String(row.name || row.名称 || '').trim(),
-          kind: row.kind || ({ 社团: 'club', 竞赛: 'contest' } as any)[row.类型] || '',
+          kind:
+            row.kind ||
+            ({ 社团: 'club', 竞赛: 'contest' } as Record<string, string>)[row.类型 || ''] ||
+            '',
           campus: row.campus || row.校区 || '',
           stars: Number(row.stars || row.星级),
           enabled: true,
@@ -120,6 +125,7 @@ async function template() {
 </script>
 <template>
   <div v-if="s.admin" class="page-wrap">
+    <IdentityConflicts />
     <span class="eyebrow">管理员</span>
     <h1>校园平台管理</h1>
     <p class="muted">组织授权、目录维护与数据生命周期。</p>

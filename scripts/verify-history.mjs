@@ -14,7 +14,7 @@ function client() {
     const response = await fetch(base + path, {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      ...(body !== undefined && method !== 'GET' ? {body:JSON.stringify(body)} : {}),
     })
     for (const value of response.headers.getSetCookie()) {
       const first = value.split(';')[0],

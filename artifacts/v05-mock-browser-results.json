@@ -1,0 +1,103 @@
+{
+  "stats": {
+    "startTime": "2026-11-02T05:10:50.954Z",
+    "duration": 110519.97099999999,
+    "expected": 15,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "cases": [
+    {
+      "name": "补充 / 批量审核过时项失败后继续处理、人数统计及脱敏导出",
+      "project": "chrome",
+      "passed": true,
+      "ms": 4420
+    },
+    {
+      "name": "活动信息 / 校区、搜索、空结果和竞赛切换",
+      "project": "chrome",
+      "passed": true,
+      "ms": 958
+    },
+    {
+      "name": "UC-01 / 学生浏览、报名、查看进度与刷新",
+      "project": "chrome",
+      "passed": true,
+      "ms": 3929
+    },
+    {
+      "name": "UC-02 / 负责人配置活动与草稿",
+      "project": "chrome",
+      "passed": true,
+      "ms": 2975
+    },
+    {
+      "name": "UC-01～05 / 报名、评分草稿、面试预约、录取与通知主线",
+      "project": "chrome",
+      "passed": true,
+      "ms": 19773
+    },
+    {
+      "name": "补充 / 批量审核过时项失败后继续处理、人数统计及脱敏导出",
+      "project": "edge",
+      "passed": true,
+      "ms": 4120
+    },
+    {
+      "name": "活动信息 / 校区、搜索、空结果和竞赛切换",
+      "project": "edge",
+      "passed": true,
+      "ms": 937
+    },
+    {
+      "name": "UC-01 / 学生浏览、报名、查看进度与刷新",
+      "project": "edge",
+      "passed": true,
+      "ms": 4186
+    },
+    {
+      "name": "UC-02 / 负责人配置活动与草稿",
+      "project": "edge",
+      "passed": true,
+      "ms": 2915
+    },
+    {
+      "name": "UC-01～05 / 报名、评分草稿、面试预约、录取与通知主线",
+      "project": "edge",
+      "passed": true,
+      "ms": 21336
+    },
+    {
+      "name": "补充 / 批量审核过时项失败后继续处理、人数统计及脱敏导出",
+      "project": "mobile375",
+      "passed": true,
+      "ms": 4002
+    },
+    {
+      "name": "活动信息 / 校区、搜索、空结果和竞赛切换",
+      "project": "mobile375",
+      "passed": true,
+      "ms": 940
+    },
+    {
+      "name": "UC-01 / 学生浏览、报名、查看进度与刷新",
+      "project": "mobile375",
+      "passed": true,
+      "ms": 4380
+    },
+    {
+      "name": "UC-02 / 负责人配置活动与草稿",
+      "project": "mobile375",
+      "passed": true,
+      "ms": 2876
+    },
+    {
+      "name": "UC-01～05 / 报名、评分草稿、面试预约、录取与通知主线",
+      "project": "mobile375",
+      "passed": true,
+      "ms": 25953
+    }
+  ],
+  "note": "Full runner report retained locally; this public summary omits action arguments and absolute machine paths."
+}
