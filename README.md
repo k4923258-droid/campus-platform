@@ -2,6 +2,49 @@
 
 基于需求文档 v0.5 的课程原型，包含独立运行的 Vue 交互版及 Java + MySQL 后端验证版。Word 原稿未改动。所有内置组织、活动与账号均为演示数据，不能作为学校当届正式通知。
 
+## 项目结构
+
+```text
+campus-platform/
+├─ src/                         Vue前端
+│  ├─ pages/                    信息墙、活动详情、学生中心、负责人和管理员页面
+│  ├─ components/               登录、报名、活动编辑、身份冲突处理等组件
+│  ├─ router/                   页面路由
+│  ├─ stores/                   Pinia会话、快照与操作状态
+│  ├─ api/                      Axios请求、附件校验、表格导入导出
+│  ├─ domain/                   模拟版业务规则、身份判断、类型和种子数据
+│  │  └─ __tests__/             前端单元测试
+│  └─ mocks/                    MSW接口及模拟邮箱
+├─ backend/                     Java后端（Spring Boot）
+│  ├─ src/main/java/cn/campus/platform/
+│  │  ├─ ApiController.java     业务接口与会话登录入口
+│  │  ├─ AuthController.java    邮箱核验、密码恢复和身份接口
+│  │  ├─ AuthService.java       验证码、身份绑定、账号冲突和限流
+│  │  ├─ PlatformService.java   业务事务、数据库读写与状态缓存
+│  │  ├─ Rules.java             报名、审核、预约、录取等业务规则
+│  │  └─ SecurityConfig.java    会话安全与CSRF配置
+│  ├─ src/main/resources/      配置、种子数据、Flyway数据库迁移
+│  ├─ src/test/                Java单元测试
+│  └─ data/                    本机数据库、附件、邮件和日志（不提交）
+├─ tests/                       Playwright浏览器流程测试
+├─ scripts/                     启动、打包、备份恢复、契约生成与少量接口检查
+├─ docs/                        需求追踪、业务规则、OpenAPI与验收记录
+├─ deploy/linux/                Linux部署、Nginx与备份定时任务
+├─ artifacts/                   已保存的测试结果、截图和参考资料
+├─ public/                      公共静态资源与MSW worker
+├─ package.json                 前端依赖和常用命令
+└─ backend/pom.xml              后端依赖与Maven构建配置
+```
+
+前端有两种运行路径，共用同一套页面：
+
+- **交互模拟版**：页面 → Pinia／Axios → MSW → TypeScript业务规则 → 浏览器IndexedDB，不需要Java和MySQL。
+- **后端验证版**：页面 → Pinia／Axios → Java接口 → 服务与业务规则 → MySQL／附件目录。生产构建的前端静态文件可由Java服务一起提供。
+
+目前业务读写较集中：前端经 `/snapshot` 获取当前用户可见的数据，经 `/commands/{action}` 提交多数业务操作；身份接口单独处理。后端主要业务集合以JSON正文保存，身份、成员占用和预约等另有关系表及约束。这是现有实现方式，尚未按业务模块拆成完整的Controller／Service／Repository分层。
+
+`src/domain/engine.ts`与Java的`Rules.java`各实现了一套规则，分别服务于模拟版和真实后端。修改业务时需要同步核对两边。页面调整主要看`pages/`和`components/`；真实身份核验看`AuthController`与`AuthService`；数据库变更新增Flyway迁移文件，不覆盖已有迁移。
+
 ## 启动交互版
 
 环境：Node 24.12+ 或满足 package.json engines 的版本。本机已使用 Node 26.5.1 验证。
@@ -85,11 +128,11 @@ npx.cmd playwright test --config playwright.server.config.ts
 npm.cmd run build
 npm.cmd run test:rules
 npm.cmd run test:e2e
-npm.cmd run test:server
+npm.cmd run test:identity
 ./backend/mvnw.cmd -f backend/pom.xml test
 ```
 
-浏览器测试使用本机Chrome、Edge与375像素视口，不自动安装浏览器。截图与机器可读结果在 `artifacts/`。接口测试会写入模拟记录并归档自己的测试活动。压测入口为 `scripts/load-test.js`；当k6发行包下载不可用时，另提供明确标注工具名称的 `scripts/load-fallback.mjs`，不把替代程序结果标成k6结果。
+浏览器测试使用本机Chrome、Edge与375像素视口，不自动安装浏览器。截图与机器可读结果在 `artifacts/`。身份接口检查使用8085上的独立本地测试库和Mailpit，会创建测试账号并调整测试夹具；历史审核接口检查会创建并归档自己的测试活动。保留的压测入口为 `scripts/load-test.js`，需另行安装k6。旧版接口检查、替代压测和一次性恢复演练脚本已清理，原源码可从Git历史查看；历史结果继续保存在 `artifacts/`。
 
 核对 [需求追踪表](docs/需求追踪表.md)、[OpenAPI](docs/openapi.json)、[验收记录](docs/验收记录.md)。51条功能需求映射并不表示每条均已完成全部人工验收；未验证项目必须保留在验收记录中。
 

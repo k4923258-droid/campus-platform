@@ -17,7 +17,6 @@
     "format": "prettier --write --experimental-cli src/",
     "dev:server": "vite --mode server --host 127.0.0.1",
     "test:rules": "vitest run src/domain/__tests__",
-    "test:server": "node scripts/verify-identity.mjs",
     "contract": "node scripts/generate-contract.mjs",
     "test:identity": "node scripts/verify-identity.mjs"
   },
